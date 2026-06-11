@@ -1291,6 +1291,16 @@
     /* collapsed sidebar: let hover tooltips escape the rail */
     .frame.col .sidebar { overflow: visible; }
 
+    /* ── DEMO MODE ───────────────────────────────────────── */
+    .demo-pill {
+      display: flex; align-items: center; gap: 5px;
+      font-size: .63rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+      background: oklch(72% 0.19 160); color: oklch(10% 0.03 160);
+      padding: 3px 9px; border-radius: 20px;
+      user-select: none; flex-shrink: 0;
+    }
+    .demo-pill::before { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: oklch(22% 0.06 160); }
+
     /* ── RESPONSIVE ──────────────────────────────────────── */
     @media (max-width: 820px) {
       .frame { inset: 0; border-radius: 0; }
@@ -1306,6 +1316,251 @@
   onerror="this.onerror=null;this.src='https://unpkg.com/react-dom@18/umd/react-dom.production.min.js'"></script>
 <script>
 'use strict';
+
+/* ─────────────────────────────────────────────────────────
+   DEMO MODE
+   Activated when served from /demo (window.EARTH_DEMO = true).
+   Intercepts all /api/* fetch calls with realistic fake data so
+   the full dashboard can be shown without any real services or keys.
+   External URLs (Open-Meteo weather, RSS feeds, etc.) pass through.
+───────────────────────────────────────────────────────── */
+if (window.EARTH_DEMO) {
+  const _realFetch = window.fetch.bind(window);
+
+  // ── Demo config (mirrors a real earth.yaml) ──────────────
+  const DEMO_CFG = {
+    name: 'Alex',
+    location: { name: 'London, UK', lat: 51.5074, lng: -0.1278 },
+    theme: 'dark',
+    onboarded: true,
+    weatherPersonality: 'sarcastic',
+    workMode: false,
+    workStart: '09:00',
+    workEnd: '18:00',
+    services: [
+      { id: 's1',  name: 'Jellyfin',       logo: 'jellyfin',      adapter: 'jellyfin',      url: 'http://jellyfin.local:8096',   color: '#00a4dc', stats: [], section: 'Media'     },
+      { id: 's2',  name: 'Radarr',         logo: 'radarr',        adapter: 'radarr',        url: 'http://radarr.local:7878',     color: '#ffc230', stats: [], section: 'Media'     },
+      { id: 's3',  name: 'Sonarr',         logo: 'sonarr',        adapter: 'sonarr',        url: 'http://sonarr.local:8989',     color: '#00ccff', stats: [], section: 'Media'     },
+      { id: 's4',  name: 'Immich',         logo: 'immich',        adapter: 'immich',        url: 'http://immich.local:2283',     color: '#4250af', stats: [], section: 'Media'     },
+      { id: 's5',  name: 'qBittorrent',    logo: 'qbittorrent',   adapter: 'qbittorrent',   url: 'http://localhost:8080',        color: '#2f67ba', stats: [], section: 'Downloads' },
+      { id: 's6',  name: 'Home Assistant', logo: 'homeassistant', adapter: 'homeassistant', url: 'http://ha.local:8123',         color: '#18bcf2', stats: [], section: 'Home'      },
+      { id: 's7',  name: 'AdGuard Home',   logo: 'adguard',       adapter: 'adguard',       url: 'http://adguard.local:3000',    color: '#67b346', stats: [], section: 'Network'   },
+      { id: 's8',  name: 'Portainer',      logo: 'portainer',     adapter: 'ping',          url: 'http://portainer.local:9000',  color: '#13bef9', stats: [], section: 'Infra'     },
+      { id: 's9',  name: 'Proxmox',        logo: 'proxmox',       adapter: 'ping',          url: 'http://proxmox.local:8006',    color: '#e57000', stats: [], section: 'Infra'     },
+      { id: 's10', name: 'Grafana',        logo: 'grafana',       adapter: 'ping',          url: 'http://grafana.local:3000',    color: '#f46800', stats: [], section: 'Infra'     },
+    ],
+    links: [
+      { id: 'l1', name: 'Home Assistant', url: 'http://ha.local',        color: '#18bcf2', desc: 'Smart home' },
+      { id: 'l2', name: 'Portainer',      url: 'http://portainer.local', color: '#13bef9', desc: 'Containers' },
+      { id: 'l3', name: 'Proxmox',        url: 'http://proxmox.local',   color: '#e57000', desc: 'Hypervisor' },
+      { id: 'l4', name: 'Grafana',        url: 'http://grafana.local',   color: '#f46800', desc: 'Monitoring' },
+    ],
+    feeds: [
+      { id: 'f1', name: 'Hacker News',  url: 'https://news.ycombinator.com/rss' },
+      { id: 'f2', name: 'The Verge',    url: 'https://www.theverge.com/rss/index.xml' },
+      { id: 'f3', name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index' },
+    ],
+    externalStatus: [
+      { id: 'es1', name: 'GitHub',     logo: 'github',     url: 'https://www.githubstatus.com/api/v2/status.json'    },
+      { id: 'es2', name: 'Cloudflare', logo: 'cloudflare', url: 'https://www.cloudflarestatus.com/api/v2/status.json' },
+    ],
+  };
+
+  // ── Calendar — different events per weekday for realistic nav ──
+  const _EVT_POOLS = {
+    0: [ // Sunday
+      { s: 'Farmers market',    h: 10, m:  0, d: 90,  loc: 'Borough Market'         },
+      { s: 'Family call',       h: 14, m:  0, d: 60,  loc: ''                       },
+    ],
+    1: [ // Monday
+      { s: 'Team standup',      h:  9, m:  0, d: 15,  loc: ''                       },
+      { s: 'Sprint planning',   h: 10, m:  0, d: 90,  loc: 'Conf room B'            },
+      { s: 'Lunch with Sarah',  h: 12, m: 30, d: 60,  loc: 'The Ivy, Covent Garden' },
+      { s: 'Sprint review',     h: 15, m:  0, d: 60,  loc: ''                       },
+    ],
+    2: [ // Tuesday
+      { s: 'Team standup',      h:  9, m:  0, d: 15,  loc: ''                       },
+      { s: '1:1 with manager',  h: 11, m:  0, d: 30,  loc: ''                       },
+      { s: 'Dentist',           h: 17, m: 30, d: 45,  loc: 'Dental Care, Holborn'   },
+    ],
+    3: [ // Wednesday
+      { s: 'Team standup',      h:  9, m:  0, d: 15,  loc: ''                       },
+      { s: 'Architecture review',h:14, m:  0, d: 60,  loc: ''                       },
+      { s: 'Gym',               h: 18, m:  0, d: 60,  loc: 'PureGym'                },
+    ],
+    4: [ // Thursday
+      { s: 'Team standup',      h:  9, m:  0, d: 15,  loc: ''                       },
+      { s: 'Design critique',   h: 10, m: 30, d: 45,  loc: ''                       },
+      { s: 'Tech leads sync',   h: 14, m:  0, d: 30,  loc: ''                       },
+      { s: 'Code review',       h: 16, m:  0, d: 30,  loc: ''                       },
+    ],
+    5: [ // Friday
+      { s: 'Team standup',      h:  9, m:  0, d: 15,  loc: ''                       },
+      { s: 'Product demo',      h: 11, m:  0, d: 60,  loc: ''                       },
+      { s: 'Team lunch',        h: 12, m: 30, d: 90,  loc: 'Flat Iron, Soho'        },
+      { s: 'Retrospective',     h: 16, m:  0, d: 60,  loc: ''                       },
+    ],
+    6: [ // Saturday
+      { s: 'Parkrun',           h:  9, m:  0, d: 30,  loc: 'Victoria Park'          },
+      { s: 'Brunch',            h: 11, m:  0, d: 90,  loc: 'Dishoom, Shoreditch'    },
+      { s: 'Homelab tinkering', h: 15, m:  0, d: 120, loc: ''                       },
+    ],
+  };
+
+  function _demoEvents(dateStr) {
+    const d = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
+    const pool = _EVT_POOLS[d.getDay()] || [];
+    return pool.map(ev => {
+      const start = new Date(d); start.setHours(ev.h, ev.m, 0, 0);
+      const end   = new Date(start); end.setMinutes(end.getMinutes() + ev.d);
+      return { summary: ev.s, start: start.toISOString(), end: end.toISOString(), allDay: false, location: ev.loc };
+    });
+  }
+
+  // ── System stats — completely unhinged specs ─────────────
+  const DEMO_SYSINFO = {
+    status: 'ok', source: 'node',
+    stats: [
+      { key: 'cpu',    label: 'CPU',               value: '2.1',  format: 'percent', bar: true, sub: '256 cores · 6.2 GHz'          },
+      { key: 'mem',    label: 'RAM',               value: '12.4', format: 'percent', bar: true, sub: '158.3 GB / 1.0 TB'            },
+      { key: 'disk',   label: 'Disk /',            value: '8',    format: 'percent', bar: true, sub: '3.8 TB / 48 TB'               },
+      { key: 'disk_1', label: 'Disk /mnt/array',   value: '61',   format: 'percent', bar: true, sub: '244 TB / 400 TB'              },
+      { key: 'disk_2', label: 'Disk /mnt/backup',  value: '34',   format: 'percent', bar: true, sub: '51 TB / 150 TB'               },
+      { key: 'net_tx', label: 'Net ↑',             value: 11743488000,  format: 'speed'                                             },
+      { key: 'net_rx', label: 'Net ↓',             value: 98453504000,  format: 'speed'                                             },
+      { key: 'load',   label: 'Load avg',          value: '0.04 · 0.07 · 0.05', sub: '1m · 5m · 15m', format: 'text'               },
+      { key: 'uptime', label: 'Uptime',            value: '847d 13h 6m', format: 'text'                                             },
+    ],
+  };
+
+  // ── Service adapter stats ─────────────────────────────────
+  const DEMO_SVCS = {
+    jellyfin:      { service: 'jellyfin',      label: 'Jellyfin',       status: 'ok', stats: [
+      { key: 'movies',   label: 'Movies',   value: '31,847', format: 'number' },
+      { key: 'shows',    label: 'TV Shows', value: '4,312',  format: 'number' },
+      { key: 'episodes', label: 'Episodes', value: '208,934',format: 'number' },
+      { key: 'sessions', label: 'Streams',  value: '7',      format: 'number' },
+    ]},
+    radarr:        { service: 'radarr',        label: 'Radarr',         status: 'ok', stats: [
+      { key: 'movies',  label: 'Movies',  value: '31,847', format: 'number' },
+      { key: 'missing', label: 'Missing', value: '2',      format: 'number' },
+      { key: 'queued',  label: 'Queued',  value: '14',     format: 'number' },
+    ]},
+    sonarr:        { service: 'sonarr',        label: 'Sonarr',         status: 'ok', stats: [
+      { key: 'series',   label: 'Series',   value: '4,312',  format: 'number' },
+      { key: 'episodes', label: 'Episodes', value: '208,934',format: 'number' },
+      { key: 'missing',  label: 'Missing',  value: '3',      format: 'number' },
+    ]},
+    immich:        { service: 'immich',        label: 'Immich',          status: 'ok', stats: [
+      { key: 'photos',  label: 'Photos',  value: '847,293', format: 'number'  },
+      { key: 'videos',  label: 'Videos',  value: '23,841',  format: 'number'  },
+      { key: 'storage', label: 'Storage', value: '14.2',    format: 'percent', bar: true, sub: '5.7 TB / 40 TB' },
+    ]},
+    qbittorrent:   { service: 'qbittorrent',   label: 'qBittorrent',    status: 'ok', stats: [
+      { key: 'downloading', label: 'Downloading', value: '8',          format: 'number' },
+      { key: 'seeding',     label: 'Seeding',     value: '3,847',      format: 'number' },
+      { key: 'dl_speed',    label: '↓ Speed',     value: 1258291200,   format: 'speed'  },
+      { key: 'ul_speed',    label: '↑ Speed',     value: 943718400,    format: 'speed'  },
+    ]},
+    homeassistant: { service: 'homeassistant', label: 'Home Assistant', status: 'ok', stats: [
+      { key: 'entities',    label: 'Entities',    value: '847', format: 'number' },
+      { key: 'automations', label: 'Automations', value: '203', format: 'number' },
+      { key: 'addons',      label: 'Add-ons',     value: '34',  format: 'number' },
+    ]},
+    adguard:       { service: 'adguard',       label: 'AdGuard Home',   status: 'ok', stats: [
+      { key: 'queries',    label: 'Queries today', value: '2,847,293', format: 'number'  },
+      { key: 'blocked',    label: 'Blocked',       value: '847,102',   format: 'number'  },
+      { key: 'block_rate', label: 'Block rate',    value: '29.8',      format: 'percent' },
+    ]},
+    ping:          { service: 'ping', label: 'Service', status: 'ok', stats: [] },
+  };
+
+  // ── Home Assistant entities ───────────────────────────────
+  const DEMO_HA = {
+    automation: [
+      { entity_id: 'automation.morning_lights',   state: 'on',  attributes: { friendly_name: 'Morning Lights',    last_triggered: new Date(Date.now() - 28800000).toISOString() } },
+      { entity_id: 'automation.goodnight',        state: 'on',  attributes: { friendly_name: 'Goodnight Routine', last_triggered: new Date(Date.now() - 86400000).toISOString() } },
+      { entity_id: 'automation.arrival_home',     state: 'on',  attributes: { friendly_name: 'Arrival Home',      last_triggered: new Date(Date.now() - 57600000).toISOString() } },
+      { entity_id: 'automation.away_mode',        state: 'off', attributes: { friendly_name: 'Away Mode',         last_triggered: new Date(Date.now() - 604800000).toISOString() } },
+      { entity_id: 'automation.heating_schedule', state: 'on',  attributes: { friendly_name: 'Heating Schedule',  last_triggered: new Date(Date.now() - 14400000).toISOString() } },
+    ],
+    scene: [
+      { entity_id: 'scene.movie_time', state: 'scening', attributes: { friendly_name: 'Movie Time' } },
+      { entity_id: 'scene.dinner',     state: 'scening', attributes: { friendly_name: 'Dinner'     } },
+      { entity_id: 'scene.bright',     state: 'scening', attributes: { friendly_name: 'Bright'     } },
+      { entity_id: 'scene.relax',      state: 'scening', attributes: { friendly_name: 'Relax'      } },
+    ],
+    script: [
+      { entity_id: 'script.tv_off',         state: 'off', attributes: { friendly_name: 'TV Off'          } },
+      { entity_id: 'script.bedtime_routine', state: 'off', attributes: { friendly_name: 'Bedtime Routine' } },
+    ],
+  };
+
+  // ── Helper: build a fake Response ────────────────────────
+  function _r(data, status) {
+    return Promise.resolve(new Response(JSON.stringify(data), {
+      status: status || 200, headers: { 'Content-Type': 'application/json' },
+    }));
+  }
+
+  // ── Intercept fetch ───────────────────────────────────────
+  window.fetch = (url, opts) => {
+    const urlStr = (typeof url === 'string' ? url : (url instanceof Request ? url.url : String(url)));
+    if (!urlStr.startsWith('/api/')) return _realFetch(url, opts);
+
+    const [path, qs] = urlStr.split('?');
+    const params     = Object.fromEntries(new URLSearchParams(qs || ''));
+    const method     = ((opts && opts.method) || 'GET').toUpperCase();
+
+    // Config — reads return demo config; writes are silent no-ops
+    if (path === '/api/config')     return method === 'POST' ? _r({ ok: true }) : _r(DEMO_CFG);
+    if (path === '/api/config/raw') return _r('# demo mode\nname: Alex\n');
+
+    // Calendar
+    if (path === '/api/calendar/today')   return _r({ events: _demoEvents(params.date || '') });
+    if (path === '/api/calendar-status')  return _r({ configured: true });
+    if (path === '/api/set-calendar-url') return _r({ ok: true });
+
+    // Email — hidden in demo so only calendar shows in the day panel
+    if (path === '/api/gmail/recent')    return _r({ emails: [] });
+    if (path === '/api/gmail-status')    return _r({ configured: false });
+    if (path === '/api/set-gmail-creds') return _r({ ok: true });
+
+    // System info
+    if (path === '/api/sysinfo') return _r(DEMO_SYSINFO);
+
+    // Service adapters (/api/jellyfin, /api/radarr, etc.)
+    const svcKey = path.replace('/api/', '');
+    if (DEMO_SVCS[svcKey]) return _r(DEMO_SVCS[svcKey]);
+
+    // Home Assistant
+    if (path === '/api/ha/states')  return _r(DEMO_HA[params.domain] || []);
+    if (path === '/api/ha/service') return _r({ ok: true });
+
+    // Status page checks — always green
+    if (path === '/api/status-check') return _r({ indicator: 'none', description: 'All Systems Operational' });
+
+    // Services list
+    if (path === '/api/services') return _r(Object.keys(DEMO_SVCS).map(k => ({ key: k, label: DEMO_SVCS[k].label, enabled: true })));
+
+    // Feature toggles — TMDB/LastFM/Mistral unconfigured so the "add key" UX shows
+    if (path === '/api/mistral-status') return _r({ configured: false });
+    if (path === '/api/tmdb-status')    return _r({ configured: false });
+    if (path === '/api/lastfm-status')  return _r({ configured: false });
+
+    // Onboard / token writes — silent no-ops
+    if (path === '/api/onboard')         return _r({ ok: true });
+    if (path === '/api/set-tmdb-token')  return _r({ ok: true });
+    if (path === '/api/set-lastfm-key')  return _r({ ok: true });
+
+    // LLM (Mistral) — not "configured" above so shouldn't be called, guard anyway
+    if (path === '/api/llm') return _r({ choices: [{ message: { content: 'Demo mode.' } }] });
+
+    // Everything else (feeds, health, TMDB proxy if key exists, etc.) — pass through
+    return _realFetch(url, opts);
+  };
+}
+
 const ReactDOM = window.ReactDOM;
 const { useState, useEffect, useRef, useCallback, createElement: h } = React;
 
@@ -5636,6 +5891,7 @@ function App() {
         (cfg.layout?.showResources !== false) && h(TopbarStats, { backend }),
         (cfg.layout?.showStatus !== false) && h(TopbarStatus, { services: cfg.externalStatus, backend }),
         h('div', { className: 'tb-r' },
+          window.EARTH_DEMO && h('div', { className: 'demo-pill', title: 'Demo mode — configure your own at localhost:8787' }, 'Demo'),
           h(ClockChip),
           (() => {
             const THEMES = ['dark','light','nord','catppuccin','gruvbox'];

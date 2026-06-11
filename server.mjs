@@ -184,6 +184,16 @@ app.get("/", async (c) => {
   return c.html(html);
 });
 
+// Demo mode — same UI, all /api/* calls intercepted with realistic fake data
+// No secrets, no real services needed. Share this URL to show off the dashboard.
+app.get("/demo", async (c) => {
+  const html = (await readFile(HTML_PATH, "utf8")).replace(
+    "</head>",
+    `<script>window.EARTH_DEMO=true;</script>\n</head>`
+  );
+  return c.html(html);
+});
+
 app.get("/health", (c) =>
   c.json({ ok: true, service: "earth-dashboard", adapters: [...adapters.keys()] }));
 
