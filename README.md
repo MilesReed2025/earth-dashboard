@@ -4,6 +4,10 @@
 
 ![Docker pulls](https://ghcr-badge.egpl.dev/milesreed2025/earth-dashboard/size?tag=latest)
 
+![EARTH Dashboard screenshot](docs/screenshot.png)
+
+> *Add your own screenshot: drop a `docs/screenshot.png` into the repo to show it off here.*
+
 ---
 
 ## What it is
@@ -11,6 +15,8 @@
 EARTH is a single-page dashboard built for self-hosters. It talks to your services directly — Jellyfin, Radarr, Sonarr, Home Assistant, qBittorrent, and more — and surfaces everything you actually want to see when you open a new tab.
 
 No cloud account. No telemetry. No vendor lock-in. Just a Node server, a YAML config file, and a browser.
+
+Unlike most dashboards that lock your config inside a database or proprietary format, EARTH stores everything in plain `earth.yaml`. That means your entire setup is a single file you can read, back up, version-control, or hand to a friend. The settings UI writes directly to that file — so you get a nice interface to configure things without giving up the simplicity of text.
 
 ---
 
@@ -29,6 +35,7 @@ No cloud account. No telemetry. No vendor lock-in. Just a Node server, a YAML co
 - **5 themes** — Dark, Light, Nord, Catppuccin, Gruvbox. Cycle through them with the topbar button.
 - **Work / Personal mode** — toggle manually or set a schedule to switch automatically.
 - **First-boot wizard** — guided setup on first visit. Name, location, and API keys all in one place.
+- **YAML-backed config** — your entire dashboard lives in one `earth.yaml` file. Back it up, commit it to git, share it with a friend, or restore it to a new machine in seconds. The settings UI reads and writes the same file, so you never have to choose between a nice interface and staying in control of your data.
 
 ---
 
@@ -175,6 +182,19 @@ Your `earth.yaml` and `.env` are mounted from the host — they are never overwr
 - **Backend** — [Hono](https://hono.dev) server (`server.mjs`) that serves the HTML, proxies API calls, reads/writes `earth.yaml`, and keeps secrets server-side.
 - **Config** — `earth.yaml` as the source of truth, synced to the browser via WebSocket for live edits.
 - **Secrets** — all API keys stay in `.env` and are resolved server-side. Nothing sensitive ever reaches the browser.
+
+---
+
+## Roadmap
+
+EARTH is actively being developed. Coming up:
+
+- More widget types and panel integrations
+- Deeper customization — layouts, panel sizing, per-panel settings
+- Additional service adapters for the homelab ecosystem
+- Community theme sharing
+
+Suggestions and PRs welcome.
 
 ---
 
