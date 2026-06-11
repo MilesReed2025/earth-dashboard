@@ -2448,13 +2448,17 @@ function useServiceStats(services) {
   useEffect(() => {
     if (!backendAvailable || !services?.length) return;
     let dead = false;
+    // Track adapter keys that returned 404 (unknown adapter) — stop polling them
+    const notFound = new Set();
     const load = () => services.forEach(svc => {
       const key = adapterKey(svc);
-      if (!key) return;
+      if (!key || notFound.has(key)) return;
       fetch(`/api/${encodeURIComponent(key)}?svcid=${encodeURIComponent(svc.id)}`, { signal: AbortSignal.timeout(15000) })
-        .then(r => r.json().then(j => ({ ok: r.ok, j })).catch(() => ({ ok: false, j: {} })))
-        .then(({ ok, j }) => {
+        .then(r => r.json().then(j => ({ status: r.status, ok: r.ok, j })).catch(() => ({ status: r.status, ok: false, j: {} })))
+        .then(({ status, ok, j }) => {
           if (dead) return;
+          // 404 = adapter doesn't exist — don't keep hammering the server
+          if (status === 404) { notFound.add(key); setStats(p => ({ ...p, [svc.id]: { status: 'unconfigured' } })); return; }
           setStats(p => ({ ...p, [svc.id]: ok ? j : { status: j.status || 'error', error: j.error } }));
         })
         .catch(() => { if (!dead) setStats(p => ({ ...p, [svc.id]: { status: 'error' } })); });

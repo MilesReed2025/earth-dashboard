@@ -266,15 +266,17 @@ app.get("/api/feed", async (c) => {
   if (c.req.query("fresh") === "1") cacheStore.delete(`feed:${u.href}`); // manual refresh
   try {
     const xml = await cached(`feed:${u.href}`, Number(FEED_TTL), async () => {
+      const isYouTube = u.hostname.includes("youtube.com");
       const r = await fetch(u, {
         redirect: "follow",
         signal: AbortSignal.timeout(10_000),
         headers: {
-          // YouTube and some feeds block non-browser UAs
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
           Accept: "application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.7",
           "Accept-Language": "en-GB,en;q=0.9",
           "Cache-Control": "no-cache",
+          // YouTube requires a consent cookie to serve RSS from server IPs
+          ...(isYouTube ? { Cookie: "SOCS=CAESEwgDEgk3NjYxOTU3NzIaAmVuIAEaBgiAiNO2Bg; CONSENT=YES+cb" } : {}),
         },
       });
       if (!r.ok) throw new Error(`feed → HTTP ${r.status}`);
