@@ -5,7 +5,9 @@
 ![Docker pulls](https://ghcr-badge.egpl.dev/milesreed2025/earth-dashboard/size?tag=latest)
 
 <img width="2856" height="1640" alt="Macbook-Air-192 168 4 99 (1)" src="https://github.com/user-attachments/assets/c1a9741f-d3e7-4bd3-96be-e26fc0f327c5" />
+
 <img width="2856" height="1640" alt="Macbook-Air-192 168 4 99 (2)" src="https://github.com/user-attachments/assets/8425cf22-8781-418c-b344-1adb5fe6860f" />
+
 <img width="2856" height="1640" alt="Macbook-Air-192 168 4 99 (3)" src="https://github.com/user-attachments/assets/5892e5af-3a1b-47a1-87b0-9b347b288fbb" />
 
 
