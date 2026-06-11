@@ -3276,6 +3276,12 @@ const KNOWN_ADAPTERS = {
     { key: 'up',     label: 'Upload',   desc: 'Current upload speed' },
     { key: 'active', label: 'Active',   desc: 'Active torrent count' },
   ]},
+  deluge:      { label: 'Deluge',      auth: 'password', stats: [
+    { key: 'down',        label: 'Download',    desc: 'Current download speed' },
+    { key: 'up',          label: 'Upload',      desc: 'Current upload speed' },
+    { key: 'downloading', label: 'Downloading', desc: 'Active torrent count' },
+    { key: 'seeding',     label: 'Seeding',     desc: 'Seeding torrent count' },
+  ]},
   adguard:     { label: 'AdGuard Home', auth: 'userpass', stats: [
     { key: 'queries', label: 'Queries',  desc: 'DNS queries today' },
     { key: 'blocked', label: 'Blocked',  desc: 'Blocked requests today' },
