@@ -114,6 +114,7 @@ All optional. The dashboard works without any API keys - these unlock extra feat
 | Sonarr | `SONARR_URL` + `SONARR_KEY` | Series, missing episodes |
 | Immich | `IMMICH_URL` + `IMMICH_KEY` | Photo library stats |
 | qBittorrent | `QBITTORRENT_URL` + credentials | Download queue |
+| Deluge | `DELUGE_URL` + `DELUGE_PASS` | Download queue |
 | AdGuard Home | `ADGUARD_URL` + credentials | DNS query stats |
 | Glances | `GLANCES_URL` | Extended system stats |
 
