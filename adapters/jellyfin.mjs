@@ -19,6 +19,13 @@ export default {
     const items = `${base}/Users/${await uid(base, api_key, http, cached)}/Items`;
 
     const movies = await cached("jellyfin:movies", 60_000, async () => {
+      // Use /Items/Counts for the real server-wide total — the per-user
+      // Items endpoint only returns movies visible to that user, which can
+      // under-count if the admin account has library filters applied.
+      const counts = await http.json(`${base}/Items/Counts`, { params: { api_key } })
+        .catch(() => null);
+      if (counts?.MovieCount != null) return counts.MovieCount;
+      // Fallback: per-user query (pre-10.8 servers don't have /Items/Counts)
       const d = await http.json(items, { params: { api_key, Recursive: "true", IncludeItemTypes: "Movie", Limit: "0" } });
       return d.TotalRecordCount ?? 0;
     });
