@@ -6,12 +6,6 @@
 
 <img width="2856" height="1640" alt="Macbook-Air-192 168 4 99 (1)" src="https://github.com/user-attachments/assets/c1a9741f-d3e7-4bd3-96be-e26fc0f327c5" />
 
-<img width="2856" height="1640" alt="Macbook-Air-192 168 4 99 (2)" src="https://github.com/user-attachments/assets/8425cf22-8781-418c-b344-1adb5fe6860f" />
-
-<img width="2856" height="1640" alt="Macbook-Air-192 168 4 99 (3)" src="https://github.com/user-attachments/assets/5892e5af-3a1b-47a1-87b0-9b347b288fbb" />
-
-
-
 ---
 
 ## What it is
@@ -21,6 +15,8 @@ EARTH is a single-page dashboard built for self-hosters. It talks to your servic
 No cloud account. No telemetry. No vendor lock-in. Just a Node server, a YAML config file, and a browser.
 
 Unlike most dashboards that lock your config inside a database or proprietary format, EARTH stores everything in plain `earth.yaml`. That means your entire setup is a single file you can read, back up, version-control, or hand to a friend. The settings UI writes directly to that file - so you get a nice interface to configure things without giving up the simplicity of text.
+
+<img width="2856" height="1640" alt="Macbook-Air-192 168 4 99 (2)" src="https://github.com/user-attachments/assets/8425cf22-8781-418c-b344-1adb5fe6860f" />
 
 ---
 
@@ -40,6 +36,8 @@ Unlike most dashboards that lock your config inside a database or proprietary fo
 - **Work / Personal mode** - toggle manually or set a schedule to switch automatically.
 - **First-boot wizard** - guided setup on first visit. Name, location, and API keys all in one place.
 - **YAML-backed config** - your entire dashboard lives in one `earth.yaml` file. Back it up, commit it to git, share it with a friend, or restore it to a new machine in seconds. The settings UI reads and writes the same file, so you never have to choose between a nice interface and staying in control of your data.
+
+<img width="2856" height="1640" alt="Macbook-Air-192 168 4 99 (3)" src="https://github.com/user-attachments/assets/5892e5af-3a1b-47a1-87b0-9b347b288fbb" />
 
 ---
 
