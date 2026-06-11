@@ -1,0 +1,50 @@
+services:
+  earth:
+    # ── Pull from registry (no clone needed) ─────────────────────────────────
+    # Replace GITHUBUSER with the repo owner's GitHub username, then:
+    #   docker compose pull && docker compose up -d
+    image: ghcr.io/milesreed2025/earth-dashboard:latest
+
+    # ── OR build locally from source ─────────────────────────────────────────
+    # Comment out the image: line above and uncomment this to build yourself:
+    # build: .
+
+    container_name: earth-dashboard
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8787}:8787"
+
+    # earth.yaml is mounted so you can edit it on the host and changes
+    # push to the browser instantly via WebSocket (no container restart needed).
+    volumes:
+      - ./earth.yaml:/app/earth.yaml
+      # .env holds your API keys — create it from .env.example before first run
+      - ./.env:/app/.env
+
+      # ── Disk monitoring ──────────────────────────────────────────────────────
+      # Mount each drive or share you want shown in the resources panel.
+      # The container's df command only sees paths mounted here, so add one
+      # line per filesystem. Use :ro (read-only) — the dashboard never writes.
+      #
+      # Examples:
+      #   - /mnt/storage:/mnt/storage:ro       # secondary HDD / SSD
+      #   - /mnt/nas/media:/mnt/nas/media:ro   # NAS share
+      #   - /mnt/backup:/mnt/backup:ro         # backup drive
+      #
+      # Uncomment and adjust the paths below for your setup:
+      # - /mnt/storage:/mnt/storage:ro
+
+    # Secrets and API keys — copy .env.example to .env and fill in your values.
+    env_file:
+      - .env
+
+    # Services on the same Docker network can be reached by service name
+    # e.g. JELLYFIN_URL=http://jellyfin:8096 if Jellyfin is also in compose.
+    # Uncomment and adjust if you're running other homelab services here:
+    # networks:
+    #   - homelab
+    #
+    # networks:
+    #   homelab:
+    #     external: true
+    #     name: homelab

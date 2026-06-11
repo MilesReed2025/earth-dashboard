@@ -1,0 +1,16 @@
+{
+  "name": "earth-dashboard",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs"
+  },
+  "dependencies": {
+    "hono": "^4",
+    "@hono/node-server": "^1",
+    "yaml": "^2",
+    "chokidar": "^3",
+    "ws": "^8"
+  }
+}

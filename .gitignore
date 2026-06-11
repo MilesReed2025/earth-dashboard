@@ -1,0 +1,23 @@
+# Secrets — never commit these
+.env
+
+# Personal config — contains your name, location, services
+# Distribute earth.yaml.example (a sanitised template) instead
+earth.yaml
+hearth.yaml
+
+# Node
+node_modules/
+
+# macOS
+.DS_Store
+._*
+.Spotlight-V7100
+.Trashes
+
+# Temp files written by the editor
+*.tmp.*
+.smbdelete*
+
+# Runtime
+*.log

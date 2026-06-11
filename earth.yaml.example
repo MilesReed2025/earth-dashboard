@@ -1,0 +1,54 @@
+# ─────────────────────────────────────────────
+# EARTH dashboard — example config
+# Copy this file to earth.yaml and customise it.
+# The onboarding wizard will also generate earth.yaml for you on first boot.
+# Secrets: use ${ENV_VAR} refs — resolved server-side, never sent to the browser.
+# ─────────────────────────────────────────────
+
+name: Your Name
+location: { name: London, lat: 51.505, lng: -0.127 }
+theme: dark   # dark | light | nord | catppuccin | gruvbox
+
+# ── Glances system monitoring (optional — remove if not using Glances)
+# glances:
+#   url: http://localhost:61208
+
+# ── External service status chips (Atlassian Statuspage format)
+externalStatus:
+  - { id: es1, name: GitHub,     logo: github,     url: "https://www.githubstatus.com/api/v2/status.json" }
+  - { id: es2, name: Cloudflare, logo: cloudflare, url: "https://www.cloudflarestatus.com/api/v2/status.json" }
+
+# ── Service tiles — each shows as a card on the Services page
+# adapter drives live stats; remove it if you don't have that service
+services:
+  - id: s1
+    name: Jellyfin
+    logo: jellyfin
+    adapter: jellyfin
+    url: http://jellyfin.local:8096
+    apiKey: ${JELLYFIN_KEY}
+    color: "#00a4dc"
+    stats: []
+    section: Media
+
+  - id: s2
+    name: Radarr
+    logo: radarr
+    adapter: radarr
+    url: http://radarr.local:7878
+    apiKey: ${RADARR_KEY}
+    color: "#ffc230"
+    stats: []
+    section: Media
+
+# ── Quick-link tiles on the home page
+links:
+  - { id: l1, name: Home Assistant, url: "http://homeassistant.local", color: "#18bcf2", desc: "Smart home" }
+  - { id: l2, name: Portainer,      url: "http://portainer.local",     color: "#13bef9", desc: "Containers" }
+
+# ── RSS / YouTube feeds
+feeds:
+  - { id: f1, name: Hacker News, url: "https://news.ycombinator.com/rss" }
+  - { id: f2, name: The Verge,   url: "https://www.theverge.com/rss/index.xml" }
+
+# youtube: []   # uncomment and add channel IDs to show YouTube feeds

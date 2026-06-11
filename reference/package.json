@@ -1,0 +1,19 @@
+{
+  "name": "hearth-spike",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "yaml": "node yaml-roundtrip/roundtrip.test.mjs",
+    "ha": "node ha-ws/ha-probe.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "ws": "^8.21.0",
+    "yaml": "^2.9.0"
+  }
+}
