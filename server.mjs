@@ -170,9 +170,9 @@ function mergeIntoDoc(doc, value, path = []) {
 }
 
 async function writeConfigAtomic(text) {
-  const tmp = CONFIG_PATH.replace(/earth\.yaml$/, ".earth.yaml.tmp");
-  await writeFile(tmp, text, "utf8");
-  await rename(tmp, CONFIG_PATH);
+  // When earth.yaml is a bind-mounted file in Docker, rename() across the
+  // overlay→host boundary fails with EXDEV. Write directly instead.
+  await writeFile(CONFIG_PATH, text, "utf8");
 }
 
 /* ── app ───────────────────────────────────────────────────────────────── */
