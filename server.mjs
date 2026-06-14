@@ -1208,3 +1208,138 @@ setTimeout(() => {
   runAlerts();
   setInterval(runAlerts, 30_000);
 }, 8_000);
+
+/* ── DOCKER INTEGRATION ─────────────────────────────────────────────────────
+   Talks to /var/run/docker.sock (mount it read-only in docker-compose.yml).
+   All routes return JSON; errors return { error: "..." }.
+────────────────────────────────────────────────────────────────────────────── */
+import { request as nodeHttpRequest } from "http";
+
+function dockerAPI(path, method = "GET") {
+  return new Promise((resolve, reject) => {
+    const req = nodeHttpRequest(
+      { socketPath: "/var/run/docker.sock", path: `/v1.41${path}`, method },
+      res => {
+        const chunks = [];
+        res.on("data", c => chunks.push(c));
+        res.on("end", () => resolve({ status: res.statusCode, buf: Buffer.concat(chunks) }));
+      }
+    );
+    req.on("error", reject);
+    req.end();
+  });
+}
+
+// Docker multiplexed log stream → plain text
+function demuxDockerLogs(buf) {
+  const lines = [];
+  let off = 0;
+  while (off + 8 <= buf.length) {
+    const size = buf.readUInt32BE(off + 4);
+    off += 8;
+    if (size > 0 && off + size <= buf.length) {
+      lines.push(buf.slice(off, off + size).toString("utf8"));
+      off += size;
+    } else break;
+  }
+  // Fall back to raw text if demux produced nothing sensible
+  return lines.length ? lines.join("") : buf.toString("utf8");
+}
+
+// GET /api/docker/ping — is the socket reachable?
+app.get("/api/docker/ping", async c => {
+  try {
+    const { status } = await dockerAPI("/info");
+    return c.json({ ok: status < 300 });
+  } catch {
+    return c.json({ ok: false });
+  }
+});
+
+// GET /api/docker/containers — list all containers
+app.get("/api/docker/containers", async c => {
+  try {
+    const { buf, status } = await dockerAPI("/containers/json?all=1");
+    if (status !== 200) return c.json({ error: `Docker API ${status}` }, 502);
+    const raw = JSON.parse(buf.toString());
+    const containers = raw.map(ct => ({
+      id:      ct.Id.slice(0, 12),
+      name:    (ct.Names[0] || "").replace(/^\//, ""),
+      image:   ct.Image,
+      state:   ct.State,   // running | exited | paused | restarting | dead
+      status:  ct.Status,  // "Up 2 hours", "Exited (0) 3 minutes ago"
+      created: ct.Created,
+      ports:   (ct.Ports || [])
+        .filter(p => p.PublicPort)
+        .map(p => `${p.PublicPort}:${p.PrivatePort}`)
+        .slice(0, 4),
+    }));
+    return c.json(containers);
+  } catch (e) {
+    return c.json({ error: e.message }, 503);
+  }
+});
+
+// GET /api/docker/logs/:id?tail=200 — last N log lines
+app.get("/api/docker/logs/:id", async c => {
+  const id   = c.req.param("id");
+  const tail = Math.min(Number(c.req.query("tail") || 200), 500);
+  try {
+    const { buf, status } = await dockerAPI(
+      `/containers/${id}/logs?stdout=1&stderr=1&tail=${tail}&timestamps=0`
+    );
+    if (status !== 200) return c.json({ error: `Docker API ${status}` }, 502);
+    const text = demuxDockerLogs(buf);
+    return c.json({ logs: text });
+  } catch (e) {
+    return c.json({ error: e.message }, 503);
+  }
+});
+
+// GET /api/docker/stats/:id — one-shot CPU + memory
+app.get("/api/docker/stats/:id", async c => {
+  const id = c.req.param("id");
+  try {
+    const { buf, status } = await dockerAPI(`/containers/${id}/stats?stream=false`);
+    if (status !== 200) return c.json({ error: `Docker API ${status}` }, 502);
+    const s = JSON.parse(buf.toString());
+    // CPU %
+    const cpuDelta  = s.cpu_stats.cpu_usage.total_usage - s.precpu_stats.cpu_usage.total_usage;
+    const sysDelta  = s.cpu_stats.system_cpu_usage    - s.precpu_stats.system_cpu_usage;
+    const cpuCount  = s.cpu_stats.online_cpus || s.cpu_stats.cpu_usage.percpu_usage?.length || 1;
+    const cpuPct    = sysDelta > 0 ? (cpuDelta / sysDelta) * cpuCount * 100 : 0;
+    // Memory
+    const memUsage  = s.memory_stats.usage - (s.memory_stats.stats?.cache || 0);
+    const memLimit  = s.memory_stats.limit;
+    const memPct    = memLimit > 0 ? (memUsage / memLimit) * 100 : 0;
+    return c.json({
+      cpu:    Math.round(cpuPct * 10) / 10,
+      memMB:  Math.round(memUsage / 1e6),
+      memPct: Math.round(memPct * 10) / 10,
+    });
+  } catch (e) {
+    return c.json({ error: e.message }, 503);
+  }
+});
+
+// POST /api/docker/restart/:id
+app.post("/api/docker/restart/:id", async c => {
+  const id = c.req.param("id");
+  try {
+    const { status } = await dockerAPI(`/containers/${id}/restart`, "POST");
+    return c.json({ ok: status === 204 });
+  } catch (e) {
+    return c.json({ error: e.message }, 503);
+  }
+});
+
+// POST /api/docker/stop/:id
+app.post("/api/docker/stop/:id", async c => {
+  const id = c.req.param("id");
+  try {
+    const { status } = await dockerAPI(`/containers/${id}/stop`, "POST");
+    return c.json({ ok: status === 204 });
+  } catch (e) {
+    return c.json({ error: e.message }, 503);
+  }
+});
