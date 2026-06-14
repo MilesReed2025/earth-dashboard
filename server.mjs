@@ -1269,6 +1269,7 @@ app.get("/api/docker/containers", async c => {
       state:   ct.State,   // running | exited | paused | restarting | dead
       status:  ct.Status,  // "Up 2 hours", "Exited (0) 3 minutes ago"
       created: ct.Created,
+      project: (ct.Labels || {})["com.docker.compose.project"] || null,
       ports:   (ct.Ports || [])
         .filter(p => p.PublicPort)
         .map(p => `${p.PublicPort}:${p.PrivatePort}`)
