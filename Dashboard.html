@@ -404,6 +404,9 @@
       border: 1px solid var(--b); border-radius: 4px; padding: 1px 5px;
     }
     .pal-empty { text-align: center; padding: 28px 16px; color: var(--t4); font-size: .82rem; }
+    .pal-clear { background: none; border: none; color: var(--t4); cursor: pointer; font-size: .72rem; padding: 2px 4px; border-radius: 4px; }
+    .pal-clear:hover { color: var(--t2); }
+    .pal-item-active { color: var(--a) !important; font-style: italic; }
     .pal-footer {
       display: flex; align-items: center; gap: 14px;
       padding: 8px 16px; border-top: 1px solid var(--b);
@@ -6568,8 +6571,8 @@ function ToastStack() {
 /* ─────────────────────────────────────────────────────────
    COMMAND PALETTE  (⌘S / Ctrl+S)
 ───────────────────────────────────────────────────────── */
-function CommandPalette({ cfg, view, setView, open, onClose }) {
-  const [query, setQuery] = useState('');
+function CommandPalette({ cfg, view, setView, open, onClose, dockerContainers }) {
+  const [query, setQuery]   = useState('');
   const [active, setActive] = useState(0);
   const inputRef = useRef(null);
   const listRef  = useRef(null);
@@ -6578,114 +6581,140 @@ function CommandPalette({ cfg, view, setView, open, onClose }) {
     if (open) { setQuery(''); setActive(0); setTimeout(() => inputRef.current?.focus(), 30); }
   }, [open]);
 
-  // Build items
-  const navItems = [
-    { group: 'Navigate', icon: I.home,   label: 'Home',        action: () => { setView('home'); onClose(); } },
-    { group: 'Navigate', icon: I.news,   label: 'News',        action: () => { setView('news'); onClose(); }, hidden: (cfg.layout?.hiddenNav||[]).includes('news') },
-    { group: 'Navigate', icon: I.film,   label: 'Discover',    action: () => { setView('discover'); onClose(); }, hidden: (cfg.layout?.hiddenNav||[]).includes('discover') },
-    { group: 'Navigate', icon: I.srvr,   label: 'Services',    action: () => { setView('servers'); onClose(); }, hidden: (cfg.layout?.hiddenNav||[]).includes('servers') },
-    { group: 'Navigate', icon: I.bolt,   label: 'Automations', action: () => { setView('automations'); onClose(); }, hidden: (cfg.layout?.hiddenNav||[]).includes('automations') },
-    { group: 'Navigate', icon: I.settings, label: 'Settings',  action: () => { setView('settings'); onClose(); } },
-  ].filter(x => !x.hidden);
+  // ── Build flat item list ──────────────────────────────────────────────────
+  const allItems = React.useMemo(() => {
+    const hidden = cfg.layout?.hiddenNav || [];
+    const nav = [
+      { group: 'Go to', icon: I.home,     label: 'Home',        action: () => { setView('home'); onClose(); } },
+      { group: 'Go to', icon: I.news,     label: 'News',        action: () => { setView('news'); onClose(); }, skip: hidden.includes('news') },
+      { group: 'Go to', icon: I.film,     label: 'Discover',    action: () => { setView('discover'); onClose(); }, skip: hidden.includes('discover') },
+      { group: 'Go to', icon: I.srvr,     label: 'Services',    action: () => { setView('servers'); onClose(); }, skip: hidden.includes('servers') },
+      { group: 'Go to', icon: I.bolt,     label: 'Automations', action: () => { setView('automations'); onClose(); }, skip: hidden.includes('automations') },
+      { group: 'Go to', icon: I.docker,   label: 'Docker',      action: () => { setView('docker'); onClose(); }, skip: hidden.includes('docker') },
+      { group: 'Go to', icon: I.settings, label: 'Settings',    action: () => { setView('settings'); onClose(); } },
+    ].filter(x => !x.skip);
 
-  const serviceItems = (cfg.services || []).map(s => ({
-    group: 'Services',
-    icon: null, logo: s.logo || s.adapter,
-    label: s.name, meta: s.url,
-    action: () => { window.open(s.url, '_blank', 'noopener'); onClose(); },
-  }));
+    const THEMES = ['dark','light','nord','catppuccin','gruvbox','dracula','tokyo','rosepine','solarized','monokai'];
+    const THEME_LABELS = { dark:'Dark', light:'Light', nord:'Nord', catppuccin:'Catppuccin', gruvbox:'Gruvbox', dracula:'Dracula', tokyo:'Tokyo', rosepine:'Rosé Pine', solarized:'Solarized', monokai:'Monokai' };
+    const themes = THEMES.map(t => ({
+      group: 'Theme', icon: I.palette,
+      label: THEME_LABELS[t],
+      meta: t === (cfg.theme || 'dark') ? 'active' : '',
+      action: () => { const n = { ...cfg, theme: t }; saveCfg(n); onClose(); },
+    }));
 
-  const linkItems = (cfg.links || []).map(l => ({
-    group: 'Links',
-    icon: I.link,
-    label: l.name, meta: l.desc || l.url,
-    action: () => { window.open(l.url, '_blank', 'noopener'); onClose(); },
-  }));
+    const services = (cfg.services || []).map(s => ({
+      group: 'Services', icon: null, logo: s.logo || s.adapter,
+      label: s.name, meta: s.url,
+      action: () => { window.open(s.url, '_blank', 'noopener'); onClose(); },
+    }));
 
-  const settingItems = [
-    { group: 'Settings', icon: I.settings, label: 'General settings',      action: () => { setView('settings'); onClose(); } },
-    { group: 'Settings', icon: I.palette,  label: 'Switch theme',          action: () => {
-      const THEMES = ['dark','light','nord','catppuccin','gruvbox','dracula','tokyo','rosepine','solarized','monokai'];
-      const cur = cfg.theme || 'dark'; const next = THEMES[(THEMES.indexOf(cur)+1) % THEMES.length];
-      const n = { ...cfg, theme: next }; saveCfg(n); onClose();
-    }},
-  ];
+    const links = (cfg.links || []).map(l => ({
+      group: 'Links', icon: I.link,
+      label: l.name, meta: l.desc || l.url,
+      action: () => { window.open(l.url, '_blank', 'noopener'); onClose(); },
+    }));
 
-  const allItems = [...navItems, ...serviceItems, ...linkItems, ...settingItems];
+    const docker = (dockerContainers || []).map(ct => ({
+      group: 'Docker', icon: I.docker,
+      label: ct.name, meta: ct.status,
+      dotColor: ct.state === 'running' ? 'var(--g)' : ct.state === 'restarting' ? 'oklch(78% 0.16 60)' : 'var(--r)',
+      action: () => { setView('docker'); onClose(); },
+    }));
 
-  const q = query.toLowerCase().trim();
-  const filtered = q
-    ? allItems.filter(it => it.label.toLowerCase().includes(q) || (it.meta||'').toLowerCase().includes(q) || it.group.toLowerCase().includes(q))
-    : allItems;
+    return [...nav, ...themes, ...services, ...links, ...docker];
+  }, [cfg, dockerContainers]);
 
-  // Group filtered items
-  const groups = [];
-  const seen = new Set();
-  filtered.forEach(it => {
-    if (!seen.has(it.group)) { seen.add(it.group); groups.push(it.group); }
-  });
+  // ── Fuzzy filter + score ──────────────────────────────────────────────────
+  const filtered = React.useMemo(() => {
+    const q = query.toLowerCase().trim();
+    if (!q) {
+      // No query: show nav + services only (keep list short)
+      return allItems.filter(it => it.group === 'Go to' || it.group === 'Services');
+    }
+    const score = (it) => {
+      const haystack = [it.label, it.meta || '', it.group].join(' ').toLowerCase();
+      if (!haystack.includes(q)) return -1;
+      // Prefer label-start matches → label-anywhere → meta/group
+      if (it.label.toLowerCase().startsWith(q)) return 3;
+      if (it.label.toLowerCase().includes(q))   return 2;
+      return 1;
+    };
+    return allItems
+      .map(it => ({ it, s: score(it) }))
+      .filter(({ s }) => s >= 0)
+      .sort((a, b) => b.s - a.s)
+      .map(({ it }) => it);
+  }, [allItems, query]);
 
   useEffect(() => { setActive(0); }, [query]);
 
-  const runActive = () => filtered[active]?.action?.();
-
+  // Keyboard nav
   const onKey = e => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setActive(a => Math.min(a+1, filtered.length-1)); }
-    if (e.key === 'ArrowUp')   { e.preventDefault(); setActive(a => Math.max(a-1, 0)); }
-    if (e.key === 'Enter')     { e.preventDefault(); runActive(); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActive(a => Math.min(a + 1, filtered.length - 1)); }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); setActive(a => Math.max(a - 1, 0)); }
+    if (e.key === 'Enter')     { e.preventDefault(); filtered[active]?.action?.(); }
     if (e.key === 'Escape')    { onClose(); }
   };
 
-  // Scroll active item into view
+  // Scroll active into view
   useEffect(() => {
-    const el = listRef.current?.querySelector('.pal-active');
-    el?.scrollIntoView({ block: 'nearest' });
+    listRef.current?.querySelector('.pal-active')?.scrollIntoView({ block: 'nearest' });
   }, [active]);
+
+  // Group for display — preserve filtered order, just add headers
+  const grouped = React.useMemo(() => {
+    const out = [];
+    let lastGroup = null;
+    filtered.forEach((it, i) => {
+      if (it.group !== lastGroup) { out.push({ type: 'header', label: it.group }); lastGroup = it.group; }
+      out.push({ type: 'item', it, idx: i });
+    });
+    return out;
+  }, [filtered]);
 
   if (!open) return null;
 
-  let itemIdx = 0;
   return h('div', { className: 'pal-backdrop', onClick: e => { if (e.target === e.currentTarget) onClose(); } },
     h('div', { className: 'pal-box' },
+      // Input
       h('div', { className: 'pal-input-row' },
-        h('div', { className: 'pal-icon' }, h(Icon, { d: I.search || 'M21 21l-4.35-4.35M17 11A6 6 0 111 11a6 6 0 0116 0', size: 16 })),
+        h(Icon, { d: I.search, size: 16, style: { color: 'var(--t4)', flexShrink: 0 } }),
         h('input', {
-          ref: inputRef,
-          className: 'pal-input',
-          placeholder: 'Search or jump to…',
-          value: query,
-          onChange: e => setQuery(e.target.value),
-          onKeyDown: onKey,
+          ref: inputRef, className: 'pal-input',
+          placeholder: 'Search pages, services, themes…',
+          value: query, onChange: e => setQuery(e.target.value), onKeyDown: onKey,
         }),
-        h('span', { className: 'pal-kbd' }, 'ESC'),
+        query
+          ? h('button', { type:'button', className:'pal-clear', onClick: () => setQuery('') }, '✕')
+          : h('span', { className: 'pal-kbd' }, '⌘S'),
       ),
+      // Results
       h('div', { className: 'pal-results', ref: listRef },
         filtered.length === 0
-          ? h('div', { className: 'pal-empty' }, 'No results')
-          : groups.map(group =>
-              h(React.Fragment, { key: group },
-                h('div', { className: 'pal-group-label' }, group),
-                ...filtered.filter(it => it.group === group).map(it => {
-                  const idx = itemIdx++;
-                  return h('div', {
-                    key: it.label + idx,
-                    className: 'pal-item' + (idx === active ? ' pal-active' : ''),
-                    onClick: it.action,
-                    onMouseEnter: () => setActive(idx),
+          ? h('div', { className: 'pal-empty' }, 'Nothing matching "', query, '"')
+          : grouped.map((row, ri) =>
+              row.type === 'header'
+                ? h('div', { key: 'h-' + row.label + ri, className: 'pal-group-label' }, row.label)
+                : h('div', {
+                    key: 'i-' + row.idx,
+                    className: 'pal-item' + (row.idx === active ? ' pal-active' : ''),
+                    onClick: row.it.action,
+                    onMouseEnter: () => setActive(row.idx),
                   },
                     h('div', { className: 'pal-item-icon' },
-                      it.logo
-                        ? h('img', { src: `/icons/${it.logo}.svg`, width: 16, height: 16, style: { objectFit: 'contain' }, onError: e => { e.target.style.display='none'; } })
-                        : h(Icon, { d: it.icon || I.home, size: 14 }),
+                      row.it.dotColor
+                        ? h('span', { style: { display:'inline-block', width:7, height:7, borderRadius:'50%', background: row.it.dotColor } })
+                        : row.it.logo
+                          ? h('img', { src: `/icons/${row.it.logo}.svg`, width: 15, height: 15, style: { objectFit:'contain' }, onError: e => { e.target.style.display='none'; } })
+                          : h(Icon, { d: row.it.icon || I.home, size: 14 }),
                     ),
-                    h('span', { className: 'pal-item-name' }, it.label),
-                    it.meta && h('span', { className: 'pal-item-meta' }, it.meta.length > 40 ? it.meta.slice(0,40)+'…' : it.meta),
-                    h('span', { className: 'pal-item-tag' }, it.group),
-                  );
-                })
-              )
+                    h('span', { className: 'pal-item-name' }, row.it.label),
+                    row.it.meta && h('span', { className: 'pal-item-meta' + (row.it.meta === 'active' ? ' pal-item-active' : '') }, row.it.meta.length > 45 ? row.it.meta.slice(0,45)+'…' : row.it.meta),
+                  )
             )
       ),
+      // Footer
       h('div', { className: 'pal-footer' },
         h('span', { className: 'pal-footer-key' }, h('span', { className: 'pal-kbd' }, '↑↓'), ' navigate'),
         h('span', { className: 'pal-footer-key' }, h('span', { className: 'pal-kbd' }, '↵'), ' open'),
@@ -6731,6 +6760,7 @@ function DockerView() {
       .then(d => {
         if (Array.isArray(d)) {
           setContainers(d);
+          window.__earthDockerContainers = d;
           if (!d.find(c => c.id === selected)) setSelected(null);
         } else setError(d.error);
       })
@@ -7224,7 +7254,7 @@ function App() {
 
     // INNER
     h('div', { className: 'inner' },
-      h(CommandPalette, { cfg, view, setView, open: paletteOpen, onClose: () => setPaletteOpen(false) }),
+      h(CommandPalette, { cfg, view, setView, open: paletteOpen, onClose: () => setPaletteOpen(false), dockerContainers: window.__earthDockerContainers }),
       h(ToastStack, null),
       h('div', { className: 'topbar', style: { position: 'relative' } },
         (cfg.layout?.showResources !== false) && h(TopbarStats, { backend }),
