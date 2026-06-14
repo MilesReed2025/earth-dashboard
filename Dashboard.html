@@ -637,6 +637,46 @@
     .fx-rain { font-size: .55rem; color: oklch(62% 0.16 230); }
     .fx-divider { border: none; border-top: 1px solid var(--b); margin: 18px 0; }
 
+    /* Today's compact weather card (home view) */
+    .wx-today-card {
+      margin: 0 24px 0; padding: 13px 18px;
+      background: var(--s1); border: 1px solid var(--b); border-radius: 14px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .wx-tc-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .wx-tc-temps { display: flex; flex-direction: column; gap: 1px; }
+    .wx-tc-hi { font-size: 1.05rem; font-weight: 700; color: var(--t1); line-height: 1; }
+    .wx-tc-lo { font-size: .7rem; color: var(--t4); }
+    .wx-tc-mid { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .wx-tc-cond { font-size: .78rem; font-weight: 500; color: var(--t2); }
+    .wx-tc-meta { display: flex; gap: 10px; }
+    .wx-tc-detail { font-size: .65rem; color: var(--t4); display: flex; align-items: center; gap: 2px; }
+    .wx-tc-btn {
+      flex-shrink: 0; display: flex; align-items: center;
+      padding: 6px 11px; border-radius: 8px;
+      background: var(--a-lo); border: 1px solid color-mix(in oklch, var(--a) 28%, transparent);
+      color: var(--a); font-size: .7rem; font-weight: 600; letter-spacing: .02em;
+      cursor: pointer; font-family: inherit; transition: background .15s;
+    }
+    .wx-tc-btn:hover { background: color-mix(in oklch, var(--a) 18%, transparent); }
+
+    /* Scrollable day strip in forecast modal */
+    .fx-days-scroll {
+      display: flex !important; flex-direction: row !important;
+      overflow-x: auto; gap: 8px; padding-bottom: 6px;
+      grid-template-columns: none !important;
+      scrollbar-width: thin; scrollbar-color: var(--b) transparent;
+    }
+    .fx-days-scroll .fx-day {
+      flex: 0 0 88px; min-width: 88px;
+      cursor: default; transition: background .15s, border-color .15s, transform .12s;
+    }
+    .fx-days-scroll .fx-day:hover {
+      background: var(--s2); border-color: var(--a);
+      transform: translateY(-2px);
+    }
+    .fx-days-scroll .fx-today:hover { background: var(--a-lo); }
+
     /* Inline forecast panel (home view) */
     .wx-panel {
       margin: 0 24px 0; padding: 18px 20px 16px;
@@ -2104,7 +2144,11 @@ async function fetchForecast7Day(lat, lng) {
   return res.json();
 }
 
-function stripMd(text) {
+function stripDayPrefix(line) {
+    return line.replace(/^(today|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s*:\s*/i, '');
+  }
+
+  function stripMd(text) {
   return text
     .replace(/\*\*(.+?)\*\*/g, '$1')
     .replace(/\*(.+?)\*/g, '$1')
@@ -2405,123 +2449,56 @@ function ClockChip() {
 /* ─────────────────────────────────────────────────────────
    WEATHER MODAL
 ───────────────────────────────────────────────────────── */
-function InlineForecast({ cfg }) {
-  const [forecast, setForecast] = useState(null);
-  const [narrative, setNarrative] = useState(undefined);
+function WeatherTodayCard({ cfg, onOpenForecast }) {
+  const [today, setToday] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const { lat, lng, name } = cfg.location || {};
+    const { lat, lng } = cfg.location || {};
     if (!lat || !lng) { setLoading(false); return; }
     fetchForecast7Day(lat, lng)
-      .then(data => {
-        setForecast(data);
-        setLoading(false);
-        generateForecastNarrative(data, name || 'your area', cfg.weatherPersonality, {
-          customPrompt: cfg.weatherCustomPrompt,
-          aiProvider: cfg.aiProvider,
-        })
-          .then(text => setNarrative(text || null))
-          .catch(() => setNarrative(null));
-      })
-      .catch(() => { setError('Could not load forecast.'); setLoading(false); });
-  }, [cfg.location?.lat, cfg.location?.lng, cfg.weatherPersonality, cfg.aiProvider]);
+      .then(data => { setToday(data.daily); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [cfg.location?.lat, cfg.location?.lng]);
 
   if (!cfg.location?.lat) return null;
-  if (error) return h('div', { className: 'wx-panel', style: { color: 'var(--r)', fontSize: '.8rem' } }, error);
 
-  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const today = forecast?.daily;
+  const wmo  = today?.weathercode?.[0];
+  const hi   = today ? Math.round(today.temperature_2m_max[0]) : null;
+  const lo   = today ? Math.round(today.temperature_2m_min[0]) : null;
+  const rain = today ? (today.precipitation_sum[0] || 0).toFixed(1) : null;
+  const wind = today ? Math.round(today.windspeed_10m_max[0]) : null;
+  const cond = wmo != null ? (WX_CODES[wmo] || 'Variable') : null;
 
-  // Today's stats
-  const todayWmo  = today?.weathercode?.[0];
-  const todayHi   = today ? Math.round(today.temperature_2m_max[0]) : null;
-  const todayLo   = today ? Math.round(today.temperature_2m_min[0]) : null;
-  const todayRain = today ? (today.precipitation_sum[0] || 0).toFixed(1) : null;
-  const todayWind = today ? Math.round(today.windspeed_10m_max[0]) : null;
-  const todayCond = today ? (WX_CODES[todayWmo] || 'Variable') : null;
-
-  return h('div', { className: 'wx-panel' },
-    h('div', { className: 'wx-panel-hd' },
-      h('span', { className: 'wx-panel-title' }, '7-day forecast'),
-      cfg.location?.name && h('span', { className: 'wx-panel-loc' }, cfg.location.name),
-    ),
-
-    // Today's banner
+  return h('div', { className: 'wx-today-card' },
     loading
       ? h('div', { className: 'fx-loading' },
-          h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, className: 'spin' },
+          h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, className: 'spin' },
             h('path', { d: 'M21 12a9 9 0 11-6.219-8.56' })),
-          'Loading forecast...')
+          'Loading...')
       : today && h(React.Fragment, null,
-          h('div', { className: 'wx-today-banner' },
-            h('div', { className: 'wx-today-icon' }, h(WxDayIcon, { wmo: todayWmo, size: 38 })),
-            h('div', { className: 'wx-today-temps' },
-              h('span', { className: 'wx-today-hi' }, `${todayHi}°`),
-              h('span', { className: 'wx-today-lo' }, `Low ${todayLo}°`),
-            ),
-            h('div', { className: 'wx-today-meta' },
-              h('span', { className: 'wx-today-cond' }, todayCond),
-              parseFloat(todayRain) > 0 && h('span', { className: 'wx-today-detail' },
-                h(Icon, { d: I.rss, size: 11 }), ` ${todayRain}mm rain`),
-              todayWind && h('span', { className: 'wx-today-detail' },
-                h(Icon, { d: I.wind, size: 11 }), ` ${todayWind} mph wind`),
+          h('div', { className: 'wx-tc-left' },
+            h(WxDayIcon, { wmo, size: 34 }),
+            h('div', { className: 'wx-tc-temps' },
+              h('span', { className: 'wx-tc-hi' }, `${hi}°`),
+              h('span', { className: 'wx-tc-lo' }, `${lo}°`),
             ),
           ),
-
-          // 7-day strip
-          h('div', { className: 'fx-days' },
-            ...(today.time || []).map((dateStr, i) => {
-              const d   = new Date(dateStr);
-              const wmo = today.weathercode[i];
-              const hi  = Math.round(today.temperature_2m_max[i]);
-              const lo  = Math.round(today.temperature_2m_min[i]);
-              const rain = (today.precipitation_sum[i] || 0).toFixed(1);
-              const condLabel = (WX_CODES[wmo] || 'Variable')
-                .replace('Mainly clear','Clear').replace('Light drizzle','Drizzle')
-                .replace('Heavy drizzle','Drizzle').replace('Light rain','L. Rain')
-                .replace('Heavy rain','H. Rain').replace('Light snow','L. Snow')
-                .replace('Heavy snow','H. Snow').replace('Heavy showers','Showers')
-                .replace('Violent showers','Showers').replace('Thunderstorm + hail','Thunder')
-                .replace('Thunderstorm + heavy hail','Thunder').replace('Icy fog','Fog');
-              return h('div', { className: 'fx-day' + (i === 0 ? ' fx-today' : ''), key: i },
-                h('span', { className: 'fx-dn' }, i === 0 ? 'Today' : dayNames[d.getDay()]),
-                h(WxDayIcon, { wmo, size: 20 }),
-                h('span', { className: 'fx-hi' }, `${hi}°`),
-                h('span', { className: 'fx-lo' }, `${lo}°`),
-                h('span', { className: 'fx-cond' }, condLabel),
-                parseFloat(rain) > 0 && h('span', { className: 'fx-rain' }, `${rain}mm`),
-              );
-            })
+          h('div', { className: 'wx-tc-mid' },
+            h('span', { className: 'wx-tc-cond' }, cond),
+            h('div', { className: 'wx-tc-meta' },
+              parseFloat(rain) > 0 && h('span', { className: 'wx-tc-detail' },
+                h(Icon, { d: I.rss, size: 10 }), ` ${rain}mm`),
+              wind > 0 && h('span', { className: 'wx-tc-detail' },
+                h(Icon, { d: I.wind, size: 10 }), ` ${wind} mph`),
+            ),
           ),
-
-          // AI narrative
-          narrative === undefined
-            ? h('div', { className: 'fx-loading', style: { marginTop: 14 } },
-                h('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, className: 'spin' },
-                  h('path', { d: 'M21 12a9 9 0 11-6.219-8.56' })),
-                'Generating forecast...')
-            : narrative && h('div', { className: 'wx-panel-narrative' },
-                ...(() => {
-                  const lines = stripMd(narrative).split('\n').filter(l => l.trim());
-                  return lines.map((line, i) => {
-                    const d   = new Date((today.time || [])[i] || '');
-                    const wmo = today.weathercode?.[i];
-                    const hi  = today.temperature_2m_max?.[i] != null ? Math.round(today.temperature_2m_max[i]) : null;
-                    const lo  = today.temperature_2m_min?.[i] != null ? Math.round(today.temperature_2m_min[i]) : null;
-                    const dayLabel = i === 0 ? 'Today' : d.toLocaleDateString('en-GB', { weekday: 'long' });
-                    return h('div', { className: 'fx-dl', key: i },
-                      h('div', { className: 'fx-dl-hd' },
-                        wmo != null && h(WxDayIcon, { wmo, size: 16 }),
-                        h('span', { className: 'fx-dl-day' }, dayLabel),
-                        hi != null && h('span', { className: 'fx-dl-range' }, `${hi}° / ${lo}°`),
-                      ),
-                      h('p', { className: 'fx-dl-text' }, line),
-                    );
-                  });
-                })()
-              )
+          h('button', {
+            type: 'button',
+            className: 'wx-tc-btn',
+            onClick: onOpenForecast,
+            title: 'Open 7-day forecast',
+          }, '7-day', h('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.5, style: { marginLeft: 3 } }, h('path', { d: 'M9 18l6-6-6-6' }))),
         )
   );
 }
@@ -2565,7 +2542,7 @@ function WeatherModal({ cfg, onClose }) {
       h('div', { className: 'modal-body' },
 
         // ── Day grid (top) ──
-        !loading && !error && forecast && h('div', { className: 'fx-days' },
+        !loading && !error && forecast && h('div', { className: 'fx-days fx-days-scroll' },
           ...(forecast.daily?.time || []).map((dateStr, i) => {
             const d   = new Date(dateStr);
             const wmo = forecast.daily.weathercode[i];
@@ -2611,7 +2588,7 @@ function WeatherModal({ cfg, onClose }) {
                       const hi  = Math.round(forecast.daily.temperature_2m_max[i]);
                       const lo  = Math.round(forecast.daily.temperature_2m_min[i]);
                       const dayLabel = i === 0 ? 'Today' : d.toLocaleDateString('en-GB', { weekday: 'long' });
-                      const text = lines[i] || '';
+                      const text = stripDayPrefix(lines[i] || '');
                       return h('div', { className: 'fx-dl', key: i },
                         h('div', { className: 'fx-dl-hd' },
                           h(WxDayIcon, { wmo, size: 17 }),
@@ -3655,6 +3632,7 @@ function NotesSection({ value, onChange }) {
    HOME VIEW
 ───────────────────────────────────────────────────────── */
 function HomeView({ cfg, setCfg, mode, goSettings, backend }) {
+  const [showForecast, setShowForecast] = React.useState(false);
   const services    = filterByMode(cfg.services, mode);
   const youtube     = filterByMode(cfg.youtube,  mode);
   const feeds       = filterByMode(cfg.feeds,    mode);
@@ -3667,7 +3645,8 @@ function HomeView({ cfg, setCfg, mode, goSettings, backend }) {
   const visibleServices = services.filter(s => (s.adapter || s.logo) !== 'glances');
   return h('div', null,
     h(HeroSection, { cfg, backend }),
-    cfg.location?.lat && h(InlineForecast, { cfg }),
+    cfg.location?.lat && h(WeatherTodayCard, { cfg, onOpenForecast: () => setShowForecast(true) }),
+    showForecast && h(WeatherModal, { cfg, onClose: () => setShowForecast(false) }),
     h(ServicesRow, { services: visibleServices, backend }),
     h(YouTubeRow, { channels: youtube, onGoSettings: goSettings }),
     h(NewsRow, { feeds, onGoSettings: goSettings }),
