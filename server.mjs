@@ -1096,3 +1096,115 @@ chokidar.watch(CONFIG_PATH, { ignoreInitial: true }).on("all", () => {
   clearTimeout(debounce);
   debounce = setTimeout(broadcastConfig, 150);
 });
+
+/* ── PROACTIVE ALERT ENGINE ─────────────────────────────────────────────────
+   Polls services, disk, and downloads every 30 s.
+   Pushes { type: "alert", payload: { level, title, body } } over WebSocket.
+   Deduplicates: same key suppressed until it clears then re-fires.
+────────────────────────────────────────────────────────────────────────────── */
+
+function broadcastAlert(level, title, body) {
+  const msg = JSON.stringify({ type: "alert", payload: { level, title, body } });
+  for (const ws of wss.clients) if (ws.readyState === 1) ws.send(msg);
+}
+
+// Track known-bad state so we only alert on transitions, not every 30 s
+const alertState = {
+  downServices: new Set(),   // service ids currently down
+  diskAlerted:  new Set(),   // disk labels already alerted at >85%
+  knownDone:    new Set(),   // torrent hashes already reported as done
+};
+
+async function runAlerts() {
+  let cfg;
+  try { cfg = await readConfigJson(); } catch { return; }
+
+  // ── 1. Service reachability ─────────────────────────────────────────────
+  const services = cfg.services || [];
+  for (const svc of services) {
+    if (!svc.url || !svc.id) continue;
+    try {
+      const r = await fetch(svc.url, { signal: AbortSignal.timeout(4000), redirect: "follow" });
+      if (r.ok || r.status < 500) {
+        // Back online
+        if (alertState.downServices.has(svc.id)) {
+          alertState.downServices.delete(svc.id);
+          broadcastAlert("info", `${svc.name} is back online`, svc.url);
+        }
+      } else throw new Error(`HTTP ${r.status}`);
+    } catch {
+      if (!alertState.downServices.has(svc.id)) {
+        alertState.downServices.add(svc.id);
+        broadcastAlert("error", `${svc.name} is unreachable`, `Could not connect to ${svc.url}`);
+      }
+    }
+  }
+
+  // ── 2. Disk usage via Glances ───────────────────────────────────────────
+  const glancesUrl = cfg.glances?.url || process.env.GLANCES_URL;
+  if (glancesUrl) {
+    try {
+      const res = await fetch(`${glancesUrl}/api/3/fs`, { signal: AbortSignal.timeout(4000) });
+      if (res.ok) {
+        const disks = await res.json();
+        for (const d of (Array.isArray(disks) ? disks : [])) {
+          const pct = d.percent ?? ((d.used / d.size) * 100);
+          const label = d.mnt_point || d.device_name || "disk";
+          if (pct >= 90 && !alertState.diskAlerted.has(label)) {
+            alertState.diskAlerted.add(label);
+            broadcastAlert("error", `Disk almost full: ${label}`, `${Math.round(pct)}% used`);
+          } else if (pct >= 85 && !alertState.diskAlerted.has(label)) {
+            alertState.diskAlerted.add(label);
+            broadcastAlert("warn", `Disk space low: ${label}`, `${Math.round(pct)}% used`);
+          } else if (pct < 80) {
+            alertState.diskAlerted.delete(label);
+          }
+        }
+      }
+    } catch { /* glances unavailable */ }
+  }
+
+  // ── 3. qBittorrent completed downloads ─────────────────────────────────
+  const qbUrl  = process.env.QBITTORRENT_URL;
+  const qbUser = process.env.QBITTORRENT_USER || "admin";
+  const qbPass = process.env.QBITTORRENT_PASS;
+  if (qbUrl && qbPass) {
+    try {
+      // Login
+      const loginRes = await fetch(`${qbUrl}/api/v2/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `username=${encodeURIComponent(qbUser)}&password=${encodeURIComponent(qbPass)}`,
+        signal: AbortSignal.timeout(4000),
+      });
+      const cookie = loginRes.headers.get("set-cookie")?.split(";")[0] || "";
+      if (cookie) {
+        const torRes = await fetch(`${qbUrl}/api/v2/torrents/info?filter=completed`, {
+          headers: { Cookie: cookie },
+          signal: AbortSignal.timeout(4000),
+        });
+        if (torRes.ok) {
+          const torrents = await torRes.json();
+          for (const t of torrents) {
+            if (!alertState.knownDone.has(t.hash)) {
+              alertState.knownDone.add(t.hash);
+              // Only notify for torrents completed in last 90 s (avoid flood on startup)
+              if (t.completion_on && (Date.now()/1000 - t.completion_on) < 90) {
+                const size = t.size >= 1e9
+                  ? `${(t.size/1e9).toFixed(1)} GB`
+                  : `${(t.size/1e6).toFixed(0)} MB`;
+                broadcastAlert("info", `Download complete`, `${t.name} (${size})`);
+              }
+            }
+          }
+        }
+      }
+    } catch { /* qb unavailable */ }
+  }
+}
+
+// Kick off after a short delay then every 30 s
+setTimeout(() => {
+  runAlerts();
+  setInterval(runAlerts, 30_000);
+}, 8_000);

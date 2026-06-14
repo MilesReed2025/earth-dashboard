@@ -256,6 +256,107 @@
       box-shadow: 0 40px 100px -20px oklch(0% 0 0 / .65), 0 2px 4px oklch(0% 0 0 / .3);
     }
 
+
+    /* ── COMMAND PALETTE ─────────────────────────────────────────── */
+    .pal-backdrop {
+      position: fixed; inset: 0; z-index: 9000;
+      background: oklch(0% 0 0 / .55); backdrop-filter: blur(4px);
+      display: flex; align-items: flex-start; justify-content: center;
+      padding-top: clamp(60px, 12vh, 120px);
+      animation: pal-in .12s ease;
+    }
+    @keyframes pal-in { from { opacity: 0 } to { opacity: 1 } }
+    .pal-box {
+      width: min(580px, 92vw);
+      background: var(--frame); border: 1px solid var(--b2);
+      border-radius: 16px; overflow: hidden;
+      box-shadow: 0 32px 80px oklch(0% 0 0 / .5), 0 2px 8px oklch(0% 0 0 / .3);
+      animation: pal-up .14s cubic-bezier(0,.85,.3,1);
+    }
+    @keyframes pal-up { from { transform: translateY(8px); opacity: .6 } to { transform: none; opacity: 1 } }
+    .pal-input-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px; border-bottom: 1px solid var(--b);
+    }
+    .pal-icon { color: var(--t4); flex-shrink: 0; }
+    .pal-input {
+      flex: 1; background: none; border: none; outline: none;
+      font-size: .95rem; color: var(--t1); font-family: inherit;
+      caret-color: var(--a);
+    }
+    .pal-input::placeholder { color: var(--t4); }
+    .pal-kbd {
+      font-size: .6rem; color: var(--t4); background: var(--s1);
+      border: 1px solid var(--b); border-radius: 4px;
+      padding: 2px 6px; letter-spacing: .04em; flex-shrink: 0;
+    }
+    .pal-results { max-height: 380px; overflow-y: auto; padding: 6px 0; }
+    .pal-results::-webkit-scrollbar { width: 4px; }
+    .pal-results::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 2px; }
+    .pal-group-label {
+      font-size: .58rem; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--t4);
+      padding: 8px 16px 4px;
+    }
+    .pal-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px; cursor: pointer;
+      transition: background .08s;
+    }
+    .pal-item:hover, .pal-item.pal-active {
+      background: var(--a-lo);
+    }
+    .pal-item.pal-active .pal-item-name { color: var(--a); }
+    .pal-item-icon {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: var(--s1); border: 1px solid var(--b);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--t3);
+    }
+    .pal-item-name { font-size: .82rem; font-weight: 500; color: var(--t2); flex: 1; }
+    .pal-item-meta { font-size: .65rem; color: var(--t4); }
+    .pal-item-tag {
+      font-size: .6rem; color: var(--t4); background: var(--s1);
+      border: 1px solid var(--b); border-radius: 4px; padding: 1px 5px;
+    }
+    .pal-empty { text-align: center; padding: 28px 16px; color: var(--t4); font-size: .82rem; }
+    .pal-footer {
+      display: flex; align-items: center; gap: 14px;
+      padding: 8px 16px; border-top: 1px solid var(--b);
+      font-size: .62rem; color: var(--t4);
+    }
+    .pal-footer-key { display: flex; align-items: center; gap: 4px; }
+
+    /* ── TOAST ALERTS ────────────────────────────────────────────── */
+    .toast-stack {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9100;
+      display: flex; flex-direction: column-reverse; gap: 8px;
+      pointer-events: none;
+    }
+    @media (max-width: 600px) { .toast-stack { bottom: 72px; right: 12px; left: 12px; } }
+    .toast {
+      pointer-events: all;
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 12px 14px; border-radius: 12px; min-width: 260px; max-width: 340px;
+      background: var(--frame); border: 1px solid var(--b2);
+      box-shadow: 0 8px 32px oklch(0% 0 0 / .4);
+      animation: toast-in .2s cubic-bezier(0,.85,.3,1);
+    }
+    @keyframes toast-in { from { transform: translateX(24px); opacity: 0 } to { transform: none; opacity: 1 } }
+    .toast.toast-out { animation: toast-out .18s ease forwards; }
+    @keyframes toast-out { to { transform: translateX(24px); opacity: 0 } }
+    .toast-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .toast-dot.error  { background: var(--r); box-shadow: 0 0 6px var(--r); }
+    .toast-dot.warn   { background: oklch(78% 0.16 60); box-shadow: 0 0 6px oklch(78% 0.16 60); }
+    .toast-dot.info   { background: var(--a); box-shadow: 0 0 6px var(--a); }
+    .toast-body { flex: 1; min-width: 0; }
+    .toast-title { font-size: .78rem; font-weight: 600; color: var(--t1); margin-bottom: 2px; }
+    .toast-msg   { font-size: .7rem; color: var(--t3); line-height: 1.4; }
+    .toast-close {
+      background: none; border: none; color: var(--t4); cursor: pointer;
+      font-size: 1rem; line-height: 1; padding: 0; flex-shrink: 0;
+    }
+
     /* ── SIDEBAR ─────────────────────────────────────────── */
     .sidebar {
       flex: 0 0 auto; width: var(--sw);
@@ -6339,6 +6440,176 @@ function OnboardModal({ cfg, setCfg }) {
   );
 }
 
+
+/* ─────────────────────────────────────────────────────────
+   TOAST NOTIFICATION SYSTEM
+───────────────────────────────────────────────────────── */
+const toastBus = { listeners: [], emit(t) { this.listeners.forEach(fn => fn(t)); } };
+
+function ToastStack() {
+  const [toasts, setToasts] = useState([]);
+
+  useEffect(() => {
+    const handler = (toast) => {
+      const id = Date.now() + Math.random();
+      setToasts(prev => [...prev, { ...toast, id }]);
+      setTimeout(() => {
+        setToasts(prev => prev.map(t => t.id === id ? { ...t, out: true } : t));
+        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 200);
+      }, toast.duration || 5000);
+    };
+    toastBus.listeners.push(handler);
+    return () => { toastBus.listeners = toastBus.listeners.filter(fn => fn !== handler); };
+  }, []);
+
+  if (!toasts.length) return null;
+  return h('div', { className: 'toast-stack' },
+    ...toasts.map(t =>
+      h('div', { key: t.id, className: 'toast' + (t.out ? ' toast-out' : '') },
+        h('div', { className: `toast-dot ${t.level || 'info'}` }),
+        h('div', { className: 'toast-body' },
+          h('div', { className: 'toast-title' }, t.title),
+          t.body && h('div', { className: 'toast-msg' }, t.body),
+        ),
+        h('button', {
+          className: 'toast-close',
+          onClick: () => setToasts(prev => prev.filter(x => x.id !== t.id)),
+        }, '×'),
+      )
+    )
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   COMMAND PALETTE  (⌘S / Ctrl+S)
+───────────────────────────────────────────────────────── */
+function CommandPalette({ cfg, view, setView, open, onClose }) {
+  const [query, setQuery] = useState('');
+  const [active, setActive] = useState(0);
+  const inputRef = useRef(null);
+  const listRef  = useRef(null);
+
+  useEffect(() => {
+    if (open) { setQuery(''); setActive(0); setTimeout(() => inputRef.current?.focus(), 30); }
+  }, [open]);
+
+  // Build items
+  const navItems = [
+    { group: 'Navigate', icon: I.home,   label: 'Home',        action: () => { setView('home'); onClose(); } },
+    { group: 'Navigate', icon: I.news,   label: 'News',        action: () => { setView('news'); onClose(); }, hidden: (cfg.layout?.hiddenNav||[]).includes('news') },
+    { group: 'Navigate', icon: I.film,   label: 'Discover',    action: () => { setView('discover'); onClose(); }, hidden: (cfg.layout?.hiddenNav||[]).includes('discover') },
+    { group: 'Navigate', icon: I.srvr,   label: 'Services',    action: () => { setView('servers'); onClose(); }, hidden: (cfg.layout?.hiddenNav||[]).includes('servers') },
+    { group: 'Navigate', icon: I.bolt,   label: 'Automations', action: () => { setView('automations'); onClose(); }, hidden: (cfg.layout?.hiddenNav||[]).includes('automations') },
+    { group: 'Navigate', icon: I.settings, label: 'Settings',  action: () => { setView('settings'); onClose(); } },
+  ].filter(x => !x.hidden);
+
+  const serviceItems = (cfg.services || []).map(s => ({
+    group: 'Services',
+    icon: null, logo: s.logo || s.adapter,
+    label: s.name, meta: s.url,
+    action: () => { window.open(s.url, '_blank', 'noopener'); onClose(); },
+  }));
+
+  const linkItems = (cfg.links || []).map(l => ({
+    group: 'Links',
+    icon: I.link,
+    label: l.name, meta: l.desc || l.url,
+    action: () => { window.open(l.url, '_blank', 'noopener'); onClose(); },
+  }));
+
+  const settingItems = [
+    { group: 'Settings', icon: I.settings, label: 'General settings',      action: () => { setView('settings'); onClose(); } },
+    { group: 'Settings', icon: I.palette,  label: 'Switch theme',          action: () => {
+      const THEMES = ['dark','light','nord','catppuccin','gruvbox','dracula','tokyo','rosepine','solarized','monokai'];
+      const cur = cfg.theme || 'dark'; const next = THEMES[(THEMES.indexOf(cur)+1) % THEMES.length];
+      const n = { ...cfg, theme: next }; saveCfg(n); onClose();
+    }},
+  ];
+
+  const allItems = [...navItems, ...serviceItems, ...linkItems, ...settingItems];
+
+  const q = query.toLowerCase().trim();
+  const filtered = q
+    ? allItems.filter(it => it.label.toLowerCase().includes(q) || (it.meta||'').toLowerCase().includes(q) || it.group.toLowerCase().includes(q))
+    : allItems;
+
+  // Group filtered items
+  const groups = [];
+  const seen = new Set();
+  filtered.forEach(it => {
+    if (!seen.has(it.group)) { seen.add(it.group); groups.push(it.group); }
+  });
+
+  useEffect(() => { setActive(0); }, [query]);
+
+  const runActive = () => filtered[active]?.action?.();
+
+  const onKey = e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActive(a => Math.min(a+1, filtered.length-1)); }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); setActive(a => Math.max(a-1, 0)); }
+    if (e.key === 'Enter')     { e.preventDefault(); runActive(); }
+    if (e.key === 'Escape')    { onClose(); }
+  };
+
+  // Scroll active item into view
+  useEffect(() => {
+    const el = listRef.current?.querySelector('.pal-active');
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [active]);
+
+  if (!open) return null;
+
+  let itemIdx = 0;
+  return h('div', { className: 'pal-backdrop', onClick: e => { if (e.target === e.currentTarget) onClose(); } },
+    h('div', { className: 'pal-box' },
+      h('div', { className: 'pal-input-row' },
+        h('div', { className: 'pal-icon' }, h(Icon, { d: I.search || 'M21 21l-4.35-4.35M17 11A6 6 0 111 11a6 6 0 0116 0', size: 16 })),
+        h('input', {
+          ref: inputRef,
+          className: 'pal-input',
+          placeholder: 'Search or jump to…',
+          value: query,
+          onChange: e => setQuery(e.target.value),
+          onKeyDown: onKey,
+        }),
+        h('span', { className: 'pal-kbd' }, 'ESC'),
+      ),
+      h('div', { className: 'pal-results', ref: listRef },
+        filtered.length === 0
+          ? h('div', { className: 'pal-empty' }, 'No results')
+          : groups.map(group =>
+              h(React.Fragment, { key: group },
+                h('div', { className: 'pal-group-label' }, group),
+                ...filtered.filter(it => it.group === group).map(it => {
+                  const idx = itemIdx++;
+                  return h('div', {
+                    key: it.label + idx,
+                    className: 'pal-item' + (idx === active ? ' pal-active' : ''),
+                    onClick: it.action,
+                    onMouseEnter: () => setActive(idx),
+                  },
+                    h('div', { className: 'pal-item-icon' },
+                      it.logo
+                        ? h('img', { src: `/icons/${it.logo}.svg`, width: 16, height: 16, style: { objectFit: 'contain' }, onError: e => { e.target.style.display='none'; } })
+                        : h(Icon, { d: it.icon || I.home, size: 14 }),
+                    ),
+                    h('span', { className: 'pal-item-name' }, it.label),
+                    it.meta && h('span', { className: 'pal-item-meta' }, it.meta.length > 40 ? it.meta.slice(0,40)+'…' : it.meta),
+                    h('span', { className: 'pal-item-tag' }, it.group),
+                  );
+                })
+              )
+            )
+      ),
+      h('div', { className: 'pal-footer' },
+        h('span', { className: 'pal-footer-key' }, h('span', { className: 'pal-kbd' }, '↑↓'), ' navigate'),
+        h('span', { className: 'pal-footer-key' }, h('span', { className: 'pal-kbd' }, '↵'), ' open'),
+        h('span', { className: 'pal-footer-key' }, h('span', { className: 'pal-kbd' }, 'Esc'), ' close'),
+      ),
+    )
+  );
+}
+
 function App() {
   const [cfg, setCfg] = useState(loadCfg);
   const [view, setView] = useState('home');
@@ -6351,6 +6622,7 @@ function App() {
   const [now, setNow] = useState(new Date());
   const [mode, setMode] = useState(() => getAutoMode(loadCfg()) || 'personal');
   const [backend, setBackend] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   // Backend handshake: prefer earth.yaml via /api/config, then subscribe to
   // /ws so external edits ($EDITOR, git pull) refresh the UI live.
@@ -6366,6 +6638,13 @@ function App() {
           ws.onmessage = e => {
             try {
               const m = JSON.parse(e.data);
+              if (m.type === 'alert') {
+                toastBus.emit(m.payload);
+                if (document.hidden && m.payload?.title && Notification.permission === 'granted') {
+                  new Notification('EARTH · ' + m.payload.title, { body: m.payload.body || '', icon: '/icons/earth.svg' });
+                }
+                return;
+              }
               if (m.type === 'config' && m.payload) {
                 // ignore the echo of a save we just made (avoids clobbering fast typing)
                 if (Date.now() - lastLocalSaveAt < 1500) return;
@@ -6381,7 +6660,26 @@ function App() {
     return () => { dead = true; clearTimeout(retry); if (ws) { ws.onclose = null; ws.close(); } };
   }, []);
 
+  // ⌘S / Ctrl+S → command palette
   useEffect(() => {
+    const handler = e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        setPaletteOpen(p => !p);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Request notification permission once when backend is live
+  useEffect(() => {
+    if (backend && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, [backend]);
+
+  useEffect() => {
     const id = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(id);
   }, []);
@@ -6511,6 +6809,8 @@ function App() {
 
     // INNER
     h('div', { className: 'inner' },
+      h(CommandPalette, { cfg, view, setView, open: paletteOpen, onClose: () => setPaletteOpen(false) }),
+      h(ToastStack, null),
       h('div', { className: 'topbar', style: { position: 'relative' } },
         (cfg.layout?.showResources !== false) && h(TopbarStats, { backend }),
         (cfg.layout?.showStatus !== false) && h(TopbarStatus, { services: cfg.externalStatus, backend }),
