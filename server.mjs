@@ -292,24 +292,103 @@ app.get("/api/feed", async (c) => {
 
 /* ── Mistral chat proxy — the API key never reaches the browser ─────────── */
 app.post("/api/llm", async (c) => {
-  const key = process.env.MISTRAL_KEY;
-  if (!key) return c.json({ error: "MISTRAL_KEY not set — add it to .env next to server.mjs" }, 503);
   let body;
   try { body = await c.req.json(); } catch { return c.json({ error: "body must be JSON" }, 400); }
+  const provider = (body.provider || "mistral").toLowerCase();
+  const { messages, max_tokens = 400, model } = body;
+  // Normalise any response to OpenAI shape
+  const ok = (text) => ({ choices: [{ message: { content: text } }] });
   try {
-    const r = await fetch("https://api.mistral.ai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(30_000),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) return c.json({ error: j?.message || `Mistral → HTTP ${r.status}` }, 502);
-    return c.json(j);
+    if (provider === "mistral") {
+      const key = process.env.MISTRAL_KEY;
+      if (!key) return c.json({ error: "MISTRAL_KEY not set in .env" }, 503);
+      const m = model || "mistral-small-latest";
+      const r = await fetch("https://api.mistral.ai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model: m, messages, max_tokens }),
+        signal: AbortSignal.timeout(30_000),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return c.json({ error: j?.message || `Mistral → HTTP ${r.status}` }, 502);
+      return c.json(j);
+
+    } else if (provider === "openai") {
+      const key = process.env.OPENAI_KEY;
+      if (!key) return c.json({ error: "OPENAI_KEY not set in .env" }, 503);
+      const m = model || "gpt-4o-mini";
+      const r = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model: m, messages, max_tokens }),
+        signal: AbortSignal.timeout(30_000),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return c.json({ error: j?.error?.message || `OpenAI → HTTP ${r.status}` }, 502);
+      return c.json(j);
+
+    } else if (provider === "anthropic") {
+      const key = process.env.ANTHROPIC_KEY;
+      if (!key) return c.json({ error: "ANTHROPIC_KEY not set in .env" }, 503);
+      const m = model || "claude-haiku-4-5-20251001";
+      // Anthropic uses a different messages format — system must be a top-level param
+      const sysMsg = messages.find(msg => msg.role === "system");
+      const userMsgs = messages.filter(msg => msg.role !== "system");
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": key,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: m,
+          max_tokens,
+          ...(sysMsg ? { system: sysMsg.content } : {}),
+          messages: userMsgs.map(msg => ({ role: msg.role === "assistant" ? "assistant" : "user", content: msg.content })),
+        }),
+        signal: AbortSignal.timeout(30_000),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return c.json({ error: j?.error?.message || `Anthropic → HTTP ${r.status}` }, 502);
+      return c.json(ok(j.content?.[0]?.text || ""));
+
+    } else if (provider === "gemini") {
+      const key = process.env.GEMINI_KEY;
+      if (!key) return c.json({ error: "GEMINI_KEY not set in .env" }, 503);
+      const m = model || "gemini-2.0-flash-lite";
+      const contents = messages
+        .filter(msg => msg.role !== "system")
+        .map(msg => ({ role: msg.role === "assistant" ? "model" : "user", parts: [{ text: msg.content }] }));
+      const sysMsg = messages.find(msg => msg.role === "system");
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents,
+          ...(sysMsg ? { systemInstruction: { parts: [{ text: sysMsg.content }] } } : {}),
+          generationConfig: { maxOutputTokens: max_tokens },
+        }),
+        signal: AbortSignal.timeout(30_000),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return c.json({ error: j?.error?.message || `Gemini → HTTP ${r.status}` }, 502);
+      return c.json(ok(j.candidates?.[0]?.content?.parts?.[0]?.text || ""));
+
+    } else {
+      return c.json({ error: `Unknown provider: ${provider}` }, 400);
+    }
   } catch (e) {
     return c.json({ error: String(e?.message || e) }, 502);
   }
 });
+
+app.get("/api/ai-status", (c) => c.json({
+  mistral:   !!process.env.MISTRAL_KEY,
+  openai:    !!process.env.OPENAI_KEY,
+  anthropic: !!process.env.ANTHROPIC_KEY,
+  gemini:    !!process.env.GEMINI_KEY,
+}));
 
 // External service status — proxies Atlassian Statuspage /api/v2/status.json
 // or any URL that returns { status: { indicator, description } }
