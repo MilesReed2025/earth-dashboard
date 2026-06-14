@@ -770,9 +770,9 @@
     }
     .sys-bar-fill.warn { background: oklch(72% 0.19 75); }
     .sys-bar-fill.crit { background: var(--r); }
-    .sys-tile.net { flex: 0 0 190px; flex-direction: row; align-items: center; gap: 0; }
-    .sys-tile.net .sys-half { flex: 1; }
-    .sys-tile.net .sys-half + .sys-half { border-left: 1px solid var(--b); padding-left: 12px; margin-left: 12px; }
+    .sys-tile.net { flex: 0 0 190px; flex-direction: row; align-items: center; gap: 0; padding: 0; }
+    .sys-tile.net .sys-half { flex: 1; padding: 11px 13px; }
+    .sys-tile.net .sys-half + .sys-half { border-left: 1px solid var(--b); }
 
     /* ── LINK TILES ──────────────────────────────────────── */
     .link-tile {
@@ -1301,10 +1301,97 @@
     }
     .demo-pill::before { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: oklch(22% 0.06 160); }
 
-    /* ── RESPONSIVE ──────────────────────────────────────── */
+    /* ── RESPONSIVE ──────────────────────────────────────────────────────────
+       Three breakpoints:
+         820px  Tablet landscape — collapse sidebar, shrink margins
+         600px  Tablet portrait  — bottom nav replaces sidebar
+         480px  Phone            — further tightening
+    ──────────────────────────────────────────────────────────────────────── */
+
+    /* Mobile nav — hidden on desktop, shown via media query below */
+    .mobile-nav { display: none; }
+    .mobile-nav-btn { -webkit-tap-highlight-color: transparent; }
+
+    /* ── 820px: tablet landscape ─────────────────────── */
     @media (max-width: 820px) {
       .frame { inset: 0; border-radius: 0; }
       .inner { margin: 6px 6px 6px 0; border-radius: 12px; }
+    }
+
+    /* ── 600px: sidebar → bottom tab bar ─────────────── */
+    @media (max-width: 600px) {
+      /* Reset frame/inner to full bleed */
+      .frame { inset: 0; border-radius: 0; flex-direction: column; }
+      .inner { margin: 0; border-radius: 0; border: none; flex: 1; min-height: 0; order: 1; }
+
+      /* Hide the sidebar entirely */
+      .sidebar { display: none; }
+
+      /* Bottom navigation bar — order: 2 pushes it below .inner (order:1) */
+      .mobile-nav {
+        display: flex !important;
+        order: 2;
+        flex: 0 0 auto;
+        background: var(--frame);
+        border-top: 1px solid var(--b);
+        padding: 0 4px env(safe-area-inset-bottom, 8px);
+        gap: 0;
+      }
+      .mobile-nav-btn {
+        flex: 1; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 3px; padding: 8px 4px;
+        background: none; border: none; cursor: pointer;
+        color: var(--t4); font-family: inherit;
+        transition: color .15s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .mobile-nav-btn.on { color: var(--a); }
+      .mobile-nav-btn-lbl { font-size: .6rem; font-weight: 500; letter-spacing: .01em; }
+
+      /* Topbar on mobile */
+      .topbar { padding: 0 12px; height: 44px; }
+
+      /* Scroll areas */
+      .scroll { -webkit-overflow-scrolling: touch; }
+
+      /* Row cards — narrower on phone */
+      .nv-wrap { padding: 14px 14px 30px; }
+      .svc-card, .link-tile { flex: 0 0 140px; }
+      .news-card { flex: 0 0 175px; }
+
+      /* Suppress stat chips in topbar to save space */
+      .tb-stats { display: none; }
+
+      /* Weather forecast grid wraps to 4 cols */
+      .fx-days { grid-template-columns: repeat(4, 1fr) !important; }
+
+      /* News grid → single column */
+      .nm-grid { grid-template-columns: 1fr !important; }
+      .nm-top  { grid-template-columns: 1fr !important; }
+
+      /* Settings panel */
+      .set-side { flex-direction: column; }
+      .set-tabs { flex-direction: row; overflow-x: auto; min-width: 0;
+                  border-right: none; border-bottom: 1px solid var(--b);
+                  padding: 6px 10px; gap: 4px; }
+      .set-tab { white-space: nowrap; }
+    }
+
+    /* ── 480px: phone ─────────────────────────────────── */
+    @media (max-width: 480px) {
+      .topbar { padding: 0 10px; }
+      .nv-wrap { padding: 12px 12px 24px; gap: 10px; }
+      .fx-days { grid-template-columns: repeat(4, 1fr) !important; font-size: .7rem; }
+      .svc-card { flex: 0 0 130px; }
+
+      /* Service cards: 2-column grid fallback instead of horizontal scroll */
+      .svc-grid-wrap { overflow-x: visible !important; }
+      .svc-row { display: grid !important; grid-template-columns: 1fr 1fr;
+                 gap: 8px; flex-wrap: unset; scroll-snap-type: none; }
+      .svc-card { flex: none; width: auto; }
+
+      /* Discovery films 2-col */
+      .film-row .film-card { flex: 0 0 calc(50vw - 22px); }
     }
   </style>
 </head>
@@ -1545,6 +1632,7 @@ if (window.EARTH_DEMO) {
 
     // Feature toggles — TMDB/LastFM/Mistral unconfigured so the "add key" UX shows
     if (path === '/api/mistral-status') return _r({ configured: false });
+    if (path === '/api/ai-status') return _r({ mistral: false, openai: false, anthropic: false, gemini: false });
     if (path === '/api/tmdb-status')    return _r({ configured: false });
     if (path === '/api/lastfm-status')  return _r({ configured: false });
 
@@ -1595,6 +1683,9 @@ const DEFAULTS = {
     { id: 'y1', name: 'Linus Tech Tips', channelId: 'UCXGgrKt94gR6lmN4aN3mYTg' },
   ],
   notes: '',
+  weatherPersonality: 'sarcastic',
+  weatherCustomPrompt: '',
+  aiProvider: 'mistral',
   autoSwitch: { enabled: false, workDays: [1,2,3,4,5], workStart: 8, workEnd: 17 },
 };
 
@@ -1849,7 +1940,15 @@ function stripMd(text) {
     .trim();
 }
 
-async function generateForecastNarrative(forecastData, locationName, personality) {
+// Default model per provider (cheap + fast — good for weather copy)
+const AI_DEFAULT_MODELS = {
+  mistral:   'mistral-small-latest',
+  openai:    'gpt-4o-mini',
+  anthropic: 'claude-haiku-4-5-20251001',
+  gemini:    'gemini-2.0-flash-lite',
+};
+
+async function generateForecastNarrative(forecastData, locationName, personality, { customPrompt, aiProvider } = {}) {
   const days = forecastData.daily.time.map((date, i) => {
     const d = new Date(date);
     const name = d.toLocaleDateString('en-GB', { weekday: 'long' });
@@ -1857,16 +1956,52 @@ async function generateForecastNarrative(forecastData, locationName, personality
   }).join('\n');
 
   const p = personality || 'sarcastic';
+  const provider = aiProvider || 'mistral';
+
   const PROMPTS = {
-    normal:    `Write a clear, practical 7-day weather forecast for ${locationName}. One sentence per day. Be helpful and informative — cover temperature range, chance of precipitation, and notable conditions. Suggest appropriate clothing or activity adjustments. Plain text only, no markdown, one line per day separated by newlines, under 190 words.`,
-    sarcastic: `You are a long-suffering weather presenter broken by decades of forecasting. Write a 7-day forecast for ${locationName}. Dry and sardonic. If it's going to rain, say so with resigned flair. Strong wind is "that thing off the sea." Sunshine makes you suspicious. Occasionally practical (jacket, umbrella). No corporate weather-speak. Plain text only, no markdown, one line per day, under 190 words.`,
-    rude:      `You are a weather forecaster who has completely run out of patience — with the weather and with people who keep asking about it. Write a 7-day forecast for ${locationName}. Borderline rude: clipped, irritated, zero sugarcoating. Not offensive, but pointedly annoyed at everything. Plain text only, no markdown, one line per day, under 190 words.`,
-    cheerful:  `You are a relentlessly, almost unhinged optimist presenting the weather. Write a 7-day forecast for ${locationName} finding the best possible spin on everything. Rain is "wonderful for the garden." Grey skies are "dramatically cosy." Storms are "an adventure." Genuinely upbeat, possibly delusional in your positivity. Plain text only, no markdown, one line per day, under 190 words.`,
-    depressed: `You are a weather forecaster experiencing a quiet existential crisis. Write a 7-day forecast for ${locationName} with a melancholic, introspective tone. The weather feels like a metaphor for something larger. Even sunshine is bittersweet. Keep it poetic but still informative. Plain text only, no markdown, one line per day, under 190 words.`,
+    normal:
+      `Write a clear, practical 7-day weather forecast for ${locationName}. One sentence per day. ` +
+      `Cover temperature range, precipitation, and notable conditions. Suggest clothing or activity adjustments where useful. ` +
+      `Write in plain prose — no bullet points, no markdown, one line per day, under 190 words.`,
+
+    sarcastic:
+      `You are a veteran weather presenter who has watched ${locationName} disappoint everyone for thirty years. ` +
+      `Write a 7-day forecast — dry, sardonic, quietly exhausted. Rain arrives with resigned inevitability. ` +
+      `Sun gets a suspicious squint. Wind is "that thing off the water again." ` +
+      `Drop one wry practical note per forecast (umbrella, layers, stay inside). ` +
+      `No corporate weather-speak. Plain text, one line per day, under 190 words.`,
+
+    rude:
+      `You are a weather forecaster who is openly furious about the weather and furious at anyone asking about it. ` +
+      `Write a 7-day forecast for ${locationName} — genuinely rude, contemptuous, and zero patience. ` +
+      `Rain is "obviously it's going to rain, it always rains." Sunshine is "don't get used to it." Cold is "your own fault for living here." ` +
+      `Use short, clipped sentences. Express real irritation. Still technically informative but delivered with obvious disdain. ` +
+      `Plain text, one line per day, under 190 words.`,
+
+    cheerful:
+      `You are an unstoppably, possibly delusional optimist presenting the weather for ${locationName}. ` +
+      `Write a 7-day forecast finding the absolute best in everything. Torrential rain is "the garden will love this." ` +
+      `Grey skies are "beautifully moody." Gale-force wind is "nature's free exfoliation." ` +
+      `Your positivity borders on a medical condition but you're fully committed. ` +
+      `Plain text, one line per day, under 190 words.`,
+
+    depressed:
+      `You are a weather forecaster in the grip of a quiet existential crisis. ` +
+      `Write a 7-day forecast for ${locationName} with a melancholic, introspective tone — the weather feels like a metaphor. ` +
+      `Even a clear day carries a hint of something ending. Rain is rain but also everything else. ` +
+      `Keep it poetic and still informative. No wallowing, just wistfulness. ` +
+      `Plain text, one line per day, under 190 words.`,
+
+    custom: customPrompt
+      ? `${customPrompt.trim()}\n\nLocation: ${locationName}. Plain text only, no markdown, one line per day, under 190 words.`
+      : null,
   };
 
-  const prompt = `${PROMPTS[p] || PROMPTS.sarcastic}\n\nForecast data:\n${days}`;
-  const text = await llmChat({ model: 'mistral-small-latest', messages: [{ role: 'user', content: prompt }], max_tokens: 400 });
+  const systemPrompt = PROMPTS[p] ?? PROMPTS.sarcastic;
+  if (!systemPrompt) throw new Error('Custom prompt is empty — add one in Settings → General.');
+
+  const model = AI_DEFAULT_MODELS[provider] || AI_DEFAULT_MODELS.mistral;
+  const text = await llmChat({ provider, model, messages: [{ role: 'user', content: `${systemPrompt}\n\nForecast data:\n${days}` }], max_tokens: 400 });
   return text.trim() || null;
 }
 
@@ -2108,7 +2243,7 @@ function WeatherModal({ cfg, onClose }) {
         setForecast(data);
         setLoading(false); // show the grid as soon as the data is in
         // narrative is decoration — its failure must never hide the forecast
-        generateForecastNarrative(data, name || 'your area', cfg.weatherPersonality)
+        generateForecastNarrative(data, name || 'your area', cfg.weatherPersonality, { customPrompt: cfg.weatherCustomPrompt, aiProvider: cfg.aiProvider })
           .then(text => setNarrative(text || null))
           .catch(() => setNarrative(null));
       })
@@ -4046,15 +4181,38 @@ function SettingsView({ cfg, setCfg, backend }) {
       h(LocationSearchField, { cfg, save }),
       h('div', { className: 'set-g' },
         h('div', { className: 'set-gtitle' }, 'Weather'),
+
         h('div', { className: 'set-f' },
-          h('label', { className: 'set-l' }, 'AI forecast personality'),
+          h('label', { className: 'set-l' }, 'AI provider'),
+          h('div', { className: 'wx-pers-btns' },
+            ...[
+              { key: 'mistral',   label: 'Mistral' },
+              { key: 'openai',    label: 'OpenAI' },
+              { key: 'anthropic', label: 'Anthropic' },
+              { key: 'gemini',    label: 'Gemini' },
+            ].map(({ key, label }) =>
+              h('button', {
+                key,
+                type: 'button',
+                className: 'wx-pers-btn' + ((cfg.aiProvider || 'mistral') === key ? ' active' : ''),
+                onClick: () => updField('aiProvider', key),
+              }, label)
+            )
+          ),
+          h('p', { className: 'field-hint', style: { marginTop: 7 } },
+            'Add the matching key to your .env file: MISTRAL_KEY, OPENAI_KEY, ANTHROPIC_KEY, or GEMINI_KEY.'),
+        ),
+
+        h('div', { className: 'set-f' },
+          h('label', { className: 'set-l' }, 'Forecast personality'),
           h('div', { className: 'wx-pers-btns' },
             ...[
               { key: 'normal',    label: 'Normal' },
               { key: 'sarcastic', label: 'Sarcastic' },
-              { key: 'rude',      label: 'Borderline Rude' },
+              { key: 'rude',      label: 'Actually Rude' },
               { key: 'cheerful',  label: 'Cheerful' },
               { key: 'depressed', label: 'Depressed' },
+              { key: 'custom',    label: 'Custom' },
             ].map(({ key, label }) =>
               h('button', {
                 key,
@@ -4064,7 +4222,15 @@ function SettingsView({ cfg, setCfg, backend }) {
               }, label)
             )
           ),
-          h('p', { className: 'field-hint', style: { marginTop: 7 } }, 'Affects how Mistral narrates the 7-day forecast. Requires a Mistral API key (Settings → Integrations).'),
+          (cfg.weatherPersonality === 'custom') && h('textarea', {
+            className: 'set-input',
+            style: { marginTop: 8, width: '100%', minHeight: 90, resize: 'vertical', fontFamily: 'inherit', fontSize: 13 },
+            placeholder: 'Describe how the forecast should sound, e.g. "You are a pirate captain who treats every forecast as a voyage briefing…"',
+            value: cfg.weatherCustomPrompt || '',
+            onInput: e => updField('weatherCustomPrompt', e.target.value),
+          }),
+          h('p', { className: 'field-hint', style: { marginTop: 7 } },
+            'Affects how the AI narrates the 7-day forecast. Requires an API key above.'),
         ),
       ),
       h('div', { className: 'set-g' },
@@ -5893,6 +6059,31 @@ function App() {
           h('span', { className: 'col-lbl' }, 'Collapse')
         )
       )
+    ),
+
+    // MOBILE BOTTOM NAV (hidden via CSS on desktop, shown ≤600px)
+    h('nav', { className: 'mobile-nav' },
+      ...[
+        { key: 'home',        icon: I.home,   label: 'Home'     },
+        { key: 'news',        icon: I.news,   label: 'News',     hidden: (cfg.layout?.hiddenNav||[]).includes('news')        },
+        { key: 'discover',    icon: I.film,   label: 'Discover', hidden: (cfg.layout?.hiddenNav||[]).includes('discover')    },
+        { key: 'servers',     icon: I.srvr,   label: 'Services', hidden: (cfg.layout?.hiddenNav||[]).includes('servers')     },
+        { key: 'automations', icon: I.bolt,   label: 'Autos',    hidden: (cfg.layout?.hiddenNav||[]).includes('automations') },
+        { key: 'settings',    icon: I.settings, label: 'Settings' },
+      ]
+        .filter(n => !n.hidden)
+        .slice(0, 5)
+        .map(n =>
+          h('button', {
+            key: n.key,
+            type: 'button',
+            className: 'mobile-nav-btn' + (view === n.key ? ' on' : ''),
+            onClick: () => setView(n.key),
+          },
+            h(Icon, { d: n.icon, size: 20 }),
+            h('span', { className: 'mobile-nav-btn-lbl' }, n.label),
+          )
+        )
     ),
 
     // INNER
