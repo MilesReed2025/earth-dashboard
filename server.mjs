@@ -284,7 +284,9 @@ app.get("/api/feed", async (c) => {
     });
     return c.text(xml, 200, { "Content-Type": "text/xml; charset=utf-8" });
   } catch (e) {
-    return c.json({ error: String(e?.message || e) }, 502);
+    const msg = String(e?.message || e);
+    console.warn(`[feed] ${url} → ${msg}`);
+    return c.json({ error: msg }, 502);
   }
 });
 
@@ -866,6 +868,61 @@ app.post("/api/set-gmail-creds", async (c) => {
   process.env.GMAIL_USER = user; process.env.GMAIL_APP_PASS = pass;
   cacheStore.delete("gmail:recent");
   return c.json({ ok: true });
+});
+
+/* ── GITHUB ─────────────────────────────────────────────────────────────── */
+app.get("/api/github-status", (c) => c.json({ configured: !!(process.env.GITHUB_TOKEN && process.env.GITHUB_USER) }));
+app.post("/api/set-github-creds", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const token    = (body.token    || "").trim();
+  const username = (body.username || "").trim();
+  if (!token || !username) return c.json({ error: "token and username required" }, 400);
+  const envPath = join(here, ".env");
+  let content = "";
+  try { content = fs.readFileSync(envPath, "utf8"); } catch {}
+  const set = (k, v) => {
+    if (new RegExp(`^${k}\s*=`, "m").test(content)) content = content.replace(new RegExp(`^${k}\s*=.*`, "m"), `${k}=${v}`);
+    else content += (content.endsWith("\n") || !content ? "" : "\n") + `${k}=${v}\n`;
+  };
+  set("GITHUB_TOKEN", token); set("GITHUB_USER", username);
+  fs.writeFileSync(envPath, content, "utf8");
+  process.env.GITHUB_TOKEN = token; process.env.GITHUB_USER = username;
+  return c.json({ ok: true });
+});
+
+/* ── LAST.FM ─────────────────────────────────────────────────────────────── */
+app.get("/api/lastfm-status", (c) => c.json({ configured: !!(process.env.LASTFM_KEY && process.env.LASTFM_USER) }));
+app.post("/api/set-lastfm-creds", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const apiKey   = (body.apiKey   || "").trim();
+  const username = (body.username || "").trim();
+  if (!apiKey || !username) return c.json({ error: "apiKey and username required" }, 400);
+  const envPath = join(here, ".env");
+  let content = "";
+  try { content = fs.readFileSync(envPath, "utf8"); } catch {}
+  const set = (k, v) => {
+    if (new RegExp(`^${k}\s*=`, "m").test(content)) content = content.replace(new RegExp(`^${k}\s*=.*`, "m"), `${k}=${v}`);
+    else content += (content.endsWith("\n") || !content ? "" : "\n") + `${k}=${v}\n`;
+  };
+  set("LASTFM_KEY", apiKey); set("LASTFM_USER", username);
+  fs.writeFileSync(envPath, content, "utf8");
+  process.env.LASTFM_KEY = apiKey; process.env.LASTFM_USER = username;
+  return c.json({ ok: true });
+});
+
+/* ── SERVER-SIDE PROXY (for custom API widgets) ─────────────────────────── */
+app.get("/api/proxy", async (c) => {
+  const url = c.req.query("url");
+  if (!url) return c.json({ error: "url param required" }, 400);
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(8_000) });
+    const text = await r.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = text; }
+    return c.json({ ok: r.ok, status: r.status, data });
+  } catch (e) {
+    return c.json({ error: String(e?.message || e) }, 502);
+  }
 });
 
 app.get("/api/df-debug", (c) => {
