@@ -6679,7 +6679,7 @@ function App() {
     }
   }, [backend]);
 
-  useEffect() => {
+  useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(id);
   }, []);
