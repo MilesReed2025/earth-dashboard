@@ -463,9 +463,9 @@
     .tb-panel-sub { font-size: .63rem; color: var(--t4); padding-left: 1px; }
     .tb-panel-divider { height: 1px; background: var(--b); margin: 1px 0; }
     .tb-panel-net-row { display: flex; gap: 10px; }
-    .tb-panel-net-half { display: flex; align-items: center; gap: 6px; flex: 1; }
-    .tb-panel-net-lbl { font-size: .69rem; color: var(--t3); }
-    .tb-panel-net-val { font-size: .72rem; font-weight: 600; color: var(--t1); font-variant-numeric: tabular-nums; }
+    .tb-panel-net-half { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; }
+    .tb-panel-net-lbl { font-size: .68rem; color: var(--t3); white-space: nowrap; flex-shrink: 0; }
+    .tb-panel-net-val { font-size: .72rem; font-weight: 600; color: var(--t1); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* ── SCROLL ──────────────────────────────────────────── */
     .scroll { flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
@@ -489,6 +489,21 @@
       display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
       font-size: .8rem; color: var(--t3);
     }
+    .hero-narrative {
+      font-size: .82rem; color: var(--t3); line-height: 1.55;
+      margin: 6px 0 10px; max-width: 480px;
+      font-style: italic;
+    }
+    .hero-forecast-btn {
+      display: inline-flex; align-items: center; gap: 2px;
+      margin-left: 10px;
+      padding: 3px 9px; border-radius: 6px;
+      background: var(--a-lo); border: 1px solid color-mix(in oklch, var(--a) 28%, transparent);
+      color: var(--a); font-size: .65rem; font-weight: 600; letter-spacing: .03em;
+      cursor: pointer; font-family: inherit; transition: background .15s;
+      vertical-align: middle;
+    }
+    .hero-forecast-btn:hover { background: color-mix(in oklch, var(--a) 18%, transparent); }
     .hero-temp { font-size: 1.3rem; font-weight: 300; color: var(--t2); letter-spacing: -.02em; }
     .hero-meta { display: flex; align-items: center; gap: 10px; }
     .hero-meta span { display: flex; align-items: center; gap: 4px; }
@@ -637,45 +652,26 @@
     .fx-rain { font-size: .55rem; color: oklch(62% 0.16 230); }
     .fx-divider { border: none; border-top: 1px solid var(--b); margin: 18px 0; }
 
-    /* Today's compact weather card (home view) */
-    .wx-today-card {
-      margin: 0 24px 0; padding: 13px 18px;
-      background: var(--s1); border: 1px solid var(--b); border-radius: 14px;
-      display: flex; align-items: center; gap: 14px;
-    }
-    .wx-tc-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-    .wx-tc-temps { display: flex; flex-direction: column; gap: 1px; }
-    .wx-tc-hi { font-size: 1.05rem; font-weight: 700; color: var(--t1); line-height: 1; }
-    .wx-tc-lo { font-size: .7rem; color: var(--t4); }
-    .wx-tc-mid { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-    .wx-tc-cond { font-size: .78rem; font-weight: 500; color: var(--t2); }
-    .wx-tc-meta { display: flex; gap: 10px; }
-    .wx-tc-detail { font-size: .65rem; color: var(--t4); display: flex; align-items: center; gap: 2px; }
-    .wx-tc-btn {
-      flex-shrink: 0; display: flex; align-items: center;
-      padding: 6px 11px; border-radius: 8px;
-      background: var(--a-lo); border: 1px solid color-mix(in oklch, var(--a) 28%, transparent);
-      color: var(--a); font-size: .7rem; font-weight: 600; letter-spacing: .02em;
-      cursor: pointer; font-family: inherit; transition: background .15s;
-    }
-    .wx-tc-btn:hover { background: color-mix(in oklch, var(--a) 18%, transparent); }
-
     /* Scrollable day strip in forecast modal */
     .fx-days-scroll {
       display: flex !important; flex-direction: row !important;
-      overflow-x: auto; gap: 8px; padding-bottom: 6px;
+      overflow-x: auto; gap: 8px;
+      padding: 4px 2px 10px;
       grid-template-columns: none !important;
       scrollbar-width: thin; scrollbar-color: var(--b) transparent;
     }
     .fx-days-scroll .fx-day {
-      flex: 0 0 88px; min-width: 88px;
-      cursor: default; transition: background .15s, border-color .15s, transform .12s;
+      flex: 0 0 86px; min-width: 86px;
+      cursor: pointer; transition: background .15s, border-color .15s, transform .12s;
+      outline: none;
     }
-    .fx-days-scroll .fx-day:hover {
-      background: var(--s2); border-color: var(--a);
+    .fx-days-scroll .fx-day:hover { background: var(--s2); transform: translateY(-2px); }
+    .fx-days-scroll .fx-day.fx-selected {
+      background: var(--a-lo);
+      border-color: color-mix(in oklch, var(--a) 50%, transparent);
       transform: translateY(-2px);
     }
-    .fx-days-scroll .fx-today:hover { background: var(--a-lo); }
+    .fx-days-scroll .fx-day.fx-selected .fx-dn { color: var(--a); }
 
     /* Inline forecast panel (home view) */
     .wx-panel {
@@ -2449,66 +2445,12 @@ function ClockChip() {
 /* ─────────────────────────────────────────────────────────
    WEATHER MODAL
 ───────────────────────────────────────────────────────── */
-function WeatherTodayCard({ cfg, onOpenForecast }) {
-  const [today, setToday] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const { lat, lng } = cfg.location || {};
-    if (!lat || !lng) { setLoading(false); return; }
-    fetchForecast7Day(lat, lng)
-      .then(data => { setToday(data.daily); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [cfg.location?.lat, cfg.location?.lng]);
-
-  if (!cfg.location?.lat) return null;
-
-  const wmo  = today?.weathercode?.[0];
-  const hi   = today ? Math.round(today.temperature_2m_max[0]) : null;
-  const lo   = today ? Math.round(today.temperature_2m_min[0]) : null;
-  const rain = today ? (today.precipitation_sum[0] || 0).toFixed(1) : null;
-  const wind = today ? Math.round(today.windspeed_10m_max[0]) : null;
-  const cond = wmo != null ? (WX_CODES[wmo] || 'Variable') : null;
-
-  return h('div', { className: 'wx-today-card' },
-    loading
-      ? h('div', { className: 'fx-loading' },
-          h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, className: 'spin' },
-            h('path', { d: 'M21 12a9 9 0 11-6.219-8.56' })),
-          'Loading...')
-      : today && h(React.Fragment, null,
-          h('div', { className: 'wx-tc-left' },
-            h(WxDayIcon, { wmo, size: 34 }),
-            h('div', { className: 'wx-tc-temps' },
-              h('span', { className: 'wx-tc-hi' }, `${hi}°`),
-              h('span', { className: 'wx-tc-lo' }, `${lo}°`),
-            ),
-          ),
-          h('div', { className: 'wx-tc-mid' },
-            h('span', { className: 'wx-tc-cond' }, cond),
-            h('div', { className: 'wx-tc-meta' },
-              parseFloat(rain) > 0 && h('span', { className: 'wx-tc-detail' },
-                h(Icon, { d: I.rss, size: 10 }), ` ${rain}mm`),
-              wind > 0 && h('span', { className: 'wx-tc-detail' },
-                h(Icon, { d: I.wind, size: 10 }), ` ${wind} mph`),
-            ),
-          ),
-          h('button', {
-            type: 'button',
-            className: 'wx-tc-btn',
-            onClick: onOpenForecast,
-            title: 'Open 7-day forecast',
-          }, '7-day', h('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.5, style: { marginLeft: 3 } }, h('path', { d: 'M9 18l6-6-6-6' }))),
-        )
-  );
-}
-
 function WeatherModal({ cfg, onClose }) {
   const [forecast, setForecast] = useState(null);
   const [narrative, setNarrative] = useState(undefined); // undefined = pending, null = unavailable
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showAll, setShowAll] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(0);
 
   useEffect(() => {
     const { lat, lng, name } = cfg.location || {};
@@ -2556,7 +2498,14 @@ function WeatherModal({ cfg, onClose }) {
               .replace('Heavy snow','H. Snow').replace('Heavy showers','Showers')
               .replace('Violent showers','Showers').replace('Thunderstorm + hail','Thunder')
               .replace('Thunderstorm + heavy hail','Thunder').replace('Icy fog','Fog');
-            return h('div', { className: 'fx-day' + (i === 0 ? ' fx-today' : ''), key: i },
+            const isSelected = i === selectedDay;
+            return h('div', {
+              className: 'fx-day' + (i === 0 ? ' fx-today' : '') + (isSelected ? ' fx-selected' : ''),
+              key: i,
+              onClick: () => setSelectedDay(i),
+              role: 'button',
+              tabIndex: 0,
+            },
               h('span', { className: 'fx-dn' }, i === 0 ? 'Today' : dayNames[d.getDay()]),
               h(WxDayIcon, { wmo, size: 22 }),
               h('span', { className: 'fx-hi' }, `${hi}°`),
@@ -2576,36 +2525,29 @@ function WeatherModal({ cfg, onClose }) {
             )
           : error
             ? h('p', { style: { fontSize: '.8rem', color: 'var(--r)', marginTop: 16 } }, error)
-            : narrative && forecast && h('div', { className: 'fx-dl-wrap' },
-                ...(() => {
-                  const lines = stripMd(narrative).split('\n').filter(l => l.trim());
-                  const days  = forecast.daily?.time || [];
-                  const visible = showAll ? days : days.slice(0, 3);
-                  return [
-                    ...visible.map((dateStr, i) => {
-                      const d   = new Date(dateStr);
-                      const wmo = forecast.daily.weathercode[i];
-                      const hi  = Math.round(forecast.daily.temperature_2m_max[i]);
-                      const lo  = Math.round(forecast.daily.temperature_2m_min[i]);
-                      const dayLabel = i === 0 ? 'Today' : d.toLocaleDateString('en-GB', { weekday: 'long' });
-                      const text = stripDayPrefix(lines[i] || '');
-                      return h('div', { className: 'fx-dl', key: i },
-                        h('div', { className: 'fx-dl-hd' },
-                          h(WxDayIcon, { wmo, size: 17 }),
-                          h('span', { className: 'fx-dl-day' }, dayLabel),
-                          h('span', { className: 'fx-dl-range' }, `${hi}° / ${lo}°`),
-                        ),
-                        text && h('p', { className: 'fx-dl-text' }, text),
-                      );
-                    }),
-                    !showAll && h('button', { type: 'button',
-                      key: 'more',
-                      onClick: () => setShowAll(true),
-                      style: { marginTop: 12, width: '100%', padding: '8px', background: 'var(--s1)', border: '1px solid var(--b)', borderRadius: 8, color: 'var(--t3)', fontSize: '.75rem', cursor: 'pointer', letterSpacing: '.02em' }
-                    }, `Show remaining ${days.length - 3} days ↓`),
-                  ];
-                })()
-              ),
+            : narrative && forecast && (() => {
+                const lines = stripMd(narrative).split('\n').filter(l => l.trim());
+                const days  = forecast.daily?.time || [];
+                const i     = selectedDay;
+                const dateStr = days[i];
+                if (!dateStr) return null;
+                const d   = new Date(dateStr);
+                const wmo = forecast.daily.weathercode[i];
+                const hi  = Math.round(forecast.daily.temperature_2m_max[i]);
+                const lo  = Math.round(forecast.daily.temperature_2m_min[i]);
+                const dayLabel = i === 0 ? 'Today' : d.toLocaleDateString('en-GB', { weekday: 'long' });
+                const text = stripDayPrefix(lines[i] || '');
+                return h('div', { className: 'fx-dl-wrap' },
+                  h('div', { className: 'fx-dl' },
+                    h('div', { className: 'fx-dl-hd' },
+                      h(WxDayIcon, { wmo, size: 17 }),
+                      h('span', { className: 'fx-dl-day' }, dayLabel),
+                      h('span', { className: 'fx-dl-range' }, `${hi}° / ${lo}°`),
+                    ),
+                    text && h('p', { className: 'fx-dl-text' }, text),
+                  ),
+                );
+              })(),
       )
     )
   );
@@ -2769,13 +2711,33 @@ function DayPanel({ backend }) {
 /* ─────────────────────────────────────────────────────────
    HERO
 ───────────────────────────────────────────────────────── */
-function HeroSection({ cfg, backend }) {
+function HeroSection({ cfg, backend, onOpenForecast }) {
   const { wx, error: wxError } = useWeather(cfg.location?.lat, cfg.location?.lng);
   const [now, setNow] = useState(new Date());
+  const [todayText, setTodayText] = useState(null); // null = not yet loaded
+
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    const { lat, lng, name } = cfg.location || {};
+    if (!lat || !lng) return;
+    fetchForecast7Day(lat, lng)
+      .then(data => generateForecastNarrative(data, name || 'your area', cfg.weatherPersonality, {
+        customPrompt: cfg.weatherCustomPrompt,
+        aiProvider: cfg.aiProvider,
+      }))
+      .then(text => {
+        if (!text) return;
+        const firstLine = stripDayPrefix(
+          stripMd(text).split('\n').find(l => l.trim()) || ''
+        );
+        setTodayText(firstLine || null);
+      })
+      .catch(() => {});
+  }, [cfg.location?.lat, cfg.location?.lng, cfg.weatherPersonality, cfg.aiProvider]);
 
   const hour = now.getHours();
   const greeting = hour < 5 ? 'Still up,' : hour < 12 ? 'Good morning,' : hour < 18 ? 'Good afternoon,' : 'Good evening,';
@@ -2783,20 +2745,29 @@ function HeroSection({ cfg, backend }) {
   return h('div', { className: 'hero' },
     h('div', { className: 'hero-left' },
       h('div', { className: 'hero-greeting' }, `${greeting} ${cfg.name}.`),
-      wx
-        ? h('div', { className: 'hero-wx' },
-            h('span', { className: 'hero-temp' }, `${Math.round(wx.temperature)}°`),
-            h('span', { className: 'hero-cond' }, WX_CODES[wx.weathercode] || 'Clear'),
-            h('div', { className: 'hero-meta' },
-              wx.windspeed && h('span', null, h(Icon, { d: I.wind, size: 13 }), `${Math.round(wx.windspeed)} mph`),
-              cfg.location?.name && h('span', null, cfg.location.name),
-            ),
-          )
-        : h('div', { className: 'hero-wx' },
-            h('span', { className: 'hero-cond', style: wxError ? { color: 'var(--t4)' } : null },
+      todayText && h('p', { className: 'hero-narrative' }, todayText),
+      h('div', { className: 'hero-wx' },
+        wx
+          ? h(React.Fragment, null,
+              h('span', { className: 'hero-temp' }, `${Math.round(wx.temperature)}°`),
+              h('span', { className: 'hero-cond' }, WX_CODES[wx.weathercode] || 'Clear'),
+              h('div', { className: 'hero-meta' },
+                wx.windspeed && h('span', null, h(Icon, { d: I.wind, size: 13 }), `${Math.round(wx.windspeed)} mph`),
+                cfg.location?.name && h('span', null, cfg.location.name),
+              ),
+            )
+          : h('span', { className: 'hero-cond', style: wxError ? { color: 'var(--t4)' } : null },
               wxError
                 ? `Weather unavailable${cfg.location?.name ? ' · ' + cfg.location.name : ''}`
-                : (cfg.location?.name || '')))
+                : (cfg.location?.name || '')),
+        cfg.location?.lat && onOpenForecast && h('button', {
+          type: 'button',
+          className: 'hero-forecast-btn',
+          onClick: onOpenForecast,
+        }, '7-day',
+          h('svg', { width: 11, height: 11, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.5 },
+            h('path', { d: 'M9 18l6-6-6-6' }))),
+      ),
     ),
     h(DayPanel, { backend })
   );
@@ -2834,7 +2805,7 @@ function fmtBytes(n) {
   if (n >= 1e9)  return `${(n / 1e9).toFixed(1)} GB`;
   if (n >= 1e6)  return `${(n / 1e6).toFixed(1)} MB`;
   if (n >= 1e3)  return `${(n / 1e3).toFixed(1)} kB`;
-  return `${n} B`;
+  return `${Math.round(n)} B`;
 }
 function fmtStatVal(s) {
   switch (s.format) {
@@ -3644,8 +3615,7 @@ function HomeView({ cfg, setCfg, mode, goSettings, backend }) {
   // Filter out the glances service from the cards row — it has its own SystemSection widget
   const visibleServices = services.filter(s => (s.adapter || s.logo) !== 'glances');
   return h('div', null,
-    h(HeroSection, { cfg, backend }),
-    cfg.location?.lat && h(WeatherTodayCard, { cfg, onOpenForecast: () => setShowForecast(true) }),
+    h(HeroSection, { cfg, backend, onOpenForecast: cfg.location?.lat ? () => setShowForecast(true) : null }),
     showForecast && h(WeatherModal, { cfg, onClose: () => setShowForecast(false) }),
     h(ServicesRow, { services: visibleServices, backend }),
     h(YouTubeRow, { channels: youtube, onGoSettings: goSettings }),
