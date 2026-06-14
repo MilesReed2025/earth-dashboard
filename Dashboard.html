@@ -259,55 +259,86 @@
 
 
     /* ── DOCKER VIEW ─────────────────────────────────────────── */
-    .docker-view { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+    .docker-layout {
+      display: flex; height: calc(100vh - 52px); overflow: hidden;
+    }
+    /* ── Left list ── */
+    .docker-list {
+      width: 260px; flex-shrink: 0; border-right: 1px solid var(--b);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .docker-list-hd { padding: 14px 14px 8px; border-bottom: 1px solid var(--b); display: flex; flex-direction: column; gap: 8px; }
+    .docker-list-title-row { display: flex; align-items: center; gap: 6px; }
+    .docker-list-title { font-size: .8rem; font-weight: 600; color: var(--t1); flex: 1; }
+    .docker-list-badge { font-size: .62rem; background: var(--s1); border: 1px solid var(--b); border-radius: 99px; padding: 1px 7px; color: var(--t4); font-variant-numeric: tabular-nums; }
+    .docker-refresh { background: none; border: 1px solid var(--b); border-radius: 7px; padding: 4px 7px; color: var(--t3); cursor: pointer; display: flex; align-items: center; transition: background .12s; }
+    .docker-refresh:hover { background: var(--s1); }
+    .docker-search-row { display: flex; align-items: center; gap: 6px; background: var(--s1); border: 1px solid var(--b); border-radius: 8px; padding: 5px 8px; }
+    .docker-search { background: none; border: none; outline: none; font-size: .75rem; color: var(--t1); font-family: inherit; flex: 1; }
+    .docker-search::placeholder { color: var(--t4); }
+    .docker-list-loading { display: flex; align-items: center; gap: 7px; padding: 20px 14px; color: var(--t4); font-size: .75rem; }
+    .docker-groups { flex: 1; overflow-y: auto; padding: 4px 0; scrollbar-width: thin; scrollbar-color: var(--b) transparent; }
+    .docker-group-label { font-size: .58rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--t4); padding: 10px 14px 4px; }
+    .docker-row {
+      display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+      cursor: pointer; transition: background .1s;
+    }
+    .docker-row:hover { background: var(--s1); }
+    .docker-row.active { background: var(--a-lo); }
+    .docker-row.active .docker-row-name { color: var(--a); }
+    .docker-row.stopped { opacity: .6; }
+    .docker-row-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .docker-row-name { font-size: .77rem; font-weight: 500; color: var(--t1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .docker-row-img  { font-size: .62rem; color: var(--t4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .docker-row-cpu  { font-size: .62rem; color: var(--t4); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+    .docker-state-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    /* ── Right detail ── */
+    .docker-detail { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .docker-detail-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--t4); font-size: .8rem; }
+    .docker-detail-hd { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--b); flex-shrink: 0; }
+    .docker-detail-hd-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .docker-detail-name   { font-size: .88rem; font-weight: 600; color: var(--t1); }
+    .docker-detail-status { font-size: .68rem; color: var(--t4); }
+    .docker-detail-actions { display: flex; align-items: center; gap: 6px; }
+    .docker-act-btn { display: flex; align-items: center; gap: 5px; background: var(--s1); border: 1px solid var(--b); border-radius: 7px; padding: 5px 10px; color: var(--t2); cursor: pointer; font-size: .72rem; font-family: inherit; transition: background .12s; }
+    .docker-act-btn:hover { background: var(--s2); }
+    .docker-confirm { display: flex; align-items: center; gap: 6px; font-size: .72rem; }
+    .docker-confirm span { color: var(--t3); }
+    .docker-confirm-yes { background: var(--a-lo); border: 1px solid var(--a); color: var(--a); border-radius: 6px; padding: 3px 10px; cursor: pointer; font-size: .72rem; font-family: inherit; }
+    .docker-confirm-no  { background: none; border: 1px solid var(--b); color: var(--t4); border-radius: 6px; padding: 3px 10px; cursor: pointer; font-size: .72rem; font-family: inherit; }
+    /* Tabs */
+    .docker-tabs { display: flex; gap: 2px; padding: 8px 14px; border-bottom: 1px solid var(--b); flex-shrink: 0; }
+    .docker-tab { background: none; border: none; color: var(--t4); font-family: inherit; font-size: .75rem; font-weight: 500; padding: 4px 12px; border-radius: 7px; cursor: pointer; transition: background .1s, color .1s; }
+    .docker-tab:hover { background: var(--s1); color: var(--t2); }
+    .docker-tab.on { background: var(--a-lo); color: var(--a); }
+    .docker-tab-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    /* Logs */
+    .docker-log-filter-row { display: flex; align-items: center; gap: 7px; padding: 8px 14px; border-bottom: 1px solid var(--b); flex-shrink: 0; }
+    .docker-log-filter { background: none; border: none; outline: none; flex: 1; font-size: .73rem; color: var(--t1); font-family: inherit; }
+    .docker-log-filter::placeholder { color: var(--t4); }
+    .docker-log-live { font-size: .6rem; background: color-mix(in oklch, var(--g) 15%, transparent); color: var(--g); border: 1px solid color-mix(in oklch, var(--g) 35%, transparent); border-radius: 99px; padding: 1px 8px; flex-shrink: 0; }
+    .docker-log-body { flex: 1; overflow-y: auto; padding: 12px 16px; margin: 0; font-family: 'JetBrains Mono','Fira Code',ui-monospace,monospace; font-size: .67rem; line-height: 1.65; color: var(--t2); white-space: pre-wrap; word-break: break-all; scrollbar-width: thin; scrollbar-color: var(--b) transparent; }
+    /* Stats */
+    .docker-stats-body { padding: 18px; gap: 16px; flex-direction: row !important; flex-wrap: wrap; align-content: flex-start; overflow-y: auto; }
+    .docker-stats-loading { padding: 24px; color: var(--t4); font-size: .8rem; }
+    .docker-stat-card { background: var(--s1); border: 1px solid var(--b); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 200px; flex: 1; }
+    .docker-stat-label { font-size: .62rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--t4); }
+    .docker-stat-val   { font-size: 1.4rem; font-weight: 300; color: var(--t1); line-height: 1; }
+    .docker-stat-pct   { font-size: .75rem; color: var(--t3); font-weight: 400; }
+    .docker-stat-bar-wrap { height: 4px; background: var(--b); border-radius: 99px; overflow: hidden; }
+    .docker-stat-bar      { height: 100%; border-radius: 99px; transition: width .4s ease; }
+    /* Info */
+    .docker-info-body { padding: 4px 0; overflow-y: auto; }
+    .docker-info-row  { display: flex; align-items: baseline; gap: 12px; padding: 10px 18px; border-bottom: 1px solid var(--b); }
+    .docker-info-lbl  { font-size: .68rem; color: var(--t4); width: 90px; flex-shrink: 0; }
+    .docker-info-val  { font-size: .75rem; color: var(--t2); flex: 1; word-break: break-all; }
+    .docker-info-mono { font-family: ui-monospace, monospace; font-size: .68rem; }
+    .docker-info-ports { display: flex; flex-wrap: wrap; gap: 4px; }
+    .docker-port-chip { font-size: .62rem; background: var(--inner); border: 1px solid var(--b); border-radius: 4px; padding: 2px 6px; color: var(--t3); font-variant-numeric: tabular-nums; }
     .docker-error { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 60px 24px; color: var(--t4); text-align: center; }
     .docker-error code { font-size: .72rem; background: var(--s1); padding: 4px 10px; border-radius: 6px; color: var(--r); }
-    .docker-loading { display: flex; align-items: center; gap: 8px; padding: 40px 24px; color: var(--t4); font-size: .82rem; }
-    .docker-hd { display: flex; align-items: center; justify-content: space-between; }
-    .docker-hd-left { display: flex; align-items: baseline; gap: 12px; }
-    .docker-hd-title { font-size: 1rem; font-weight: 600; color: var(--t1); }
-    .docker-hd-count { font-size: .72rem; color: var(--t4); }
-    .docker-refresh { background: none; border: 1px solid var(--b); border-radius: 8px; padding: 5px 8px; color: var(--t3); cursor: pointer; display: flex; align-items: center; }
-    .docker-refresh:hover { background: var(--s1); }
-    .docker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-    .docker-empty { color: var(--t4); font-size: .82rem; padding: 20px 0; }
-    .docker-card {
-      background: var(--s1); border: 1px solid var(--b); border-radius: 12px;
-      padding: 14px 16px; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
-      transition: border-color .15s, background .15s;
-    }
-    .docker-card:hover { border-color: var(--b2); background: var(--s2); }
-    .docker-card.selected { border-color: color-mix(in oklch, var(--a) 50%, transparent); background: var(--a-lo); }
-    .docker-card.stopped { opacity: .65; }
-    .docker-card-hd { display: flex; align-items: center; gap: 8px; }
-    .docker-state-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 5px currentColor; }
-    .docker-card-name { font-size: .82rem; font-weight: 600; color: var(--t1); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .docker-card-actions { display: flex; align-items: center; gap: 4px; }
-    .docker-act-btn { background: none; border: 1px solid var(--b); border-radius: 6px; padding: 3px 5px; color: var(--t4); cursor: pointer; display: flex; align-items: center; }
-    .docker-act-btn:hover { color: var(--a); border-color: var(--a); }
-    .docker-confirm { display: flex; align-items: center; gap: 4px; font-size: .65rem; }
-    .docker-confirm span { color: var(--t3); }
-    .docker-confirm-yes { background: var(--a-lo); border: 1px solid var(--a); color: var(--a); border-radius: 5px; padding: 2px 7px; cursor: pointer; font-size: .65rem; }
-    .docker-confirm-no  { background: none; border: 1px solid var(--b); color: var(--t4); border-radius: 5px; padding: 2px 7px; cursor: pointer; font-size: .65rem; }
-    .docker-card-image  { font-size: .68rem; color: var(--t4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .docker-card-status { font-size: .68rem; color: var(--t3); }
-    .docker-card-stats  { display: flex; gap: 10px; font-size: .65rem; color: var(--t4); font-variant-numeric: tabular-nums; }
-    .docker-card-ports  { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
-    .docker-port-chip   { font-size: .6rem; background: var(--inner); border: 1px solid var(--b); border-radius: 4px; padding: 1px 5px; color: var(--t4); font-variant-numeric: tabular-nums; }
-    .docker-log-panel {
-      background: var(--s1); border: 1px solid var(--b); border-radius: 12px;
-      display: flex; flex-direction: column; overflow: hidden;
-      max-height: 420px;
-    }
-    .docker-log-hd { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--b); flex-shrink: 0; }
-    .docker-log-hd-left { display: flex; align-items: center; gap: 8px; flex: 1; }
-    .docker-log-name { font-size: .78rem; font-weight: 600; color: var(--t2); }
-    .docker-log-live { font-size: .6rem; background: color-mix(in oklch, var(--g) 15%, transparent); color: var(--g); border: 1px solid color-mix(in oklch, var(--g) 35%, transparent); border-radius: 99px; padding: 1px 7px; }
-    .docker-log-close { background: none; border: none; color: var(--t4); cursor: pointer; display: flex; padding: 2px; border-radius: 5px; }
-    .docker-log-close:hover { color: var(--t2); background: var(--s2); }
-    .docker-log-body { flex: 1; overflow-y: auto; padding: 12px 16px; margin: 0; font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace; font-size: .68rem; line-height: 1.6; color: var(--t2); background: none; white-space: pre-wrap; word-break: break-all; scrollbar-width: thin; scrollbar-color: var(--b) transparent; }
 
-    /* ── COMMAND PALETTE ─────────────────────────────────────────── */
+        /* ── COMMAND PALETTE ─────────────────────────────────────────── */
     .pal-backdrop {
       position: fixed; inset: 0; z-index: 9000;
       background: oklch(0% 0 0 / .55); backdrop-filter: blur(4px);
@@ -6677,166 +6708,297 @@ function useDockerAvailable() {
 }
 
 function DockerView() {
-  const [containers, setContainers] = useState(null);
-  const [error, setError]           = useState(null);
-  const [selected, setSelected]     = useState(null); // container id
-  const [logs, setLogs]             = useState('');
-  const [logsLoading, setLogsLoading] = useState(false);
-  const [confirming, setConfirming]  = useState(null); // id awaiting confirm
-  const [statsMap, setStatsMap]      = useState({});
+  const [containers, setContainers]     = useState(null);
+  const [error, setError]               = useState(null);
+  const [selected, setSelected]         = useState(null);
+  const [tab, setTab]                   = useState('logs'); // logs | stats | info
+  const [logs, setLogs]                 = useState('');
+  const [logsLoading, setLogsLoading]   = useState(false);
+  const [logFilter, setLogFilter]       = useState('');
+  const [confirming, setConfirming]     = useState(null);
+  const [statsMap, setStatsMap]         = useState({});
+  const [statsHistory, setStatsHistory] = useState({}); // id → [{cpu,mem,ts}]
+  const [search, setSearch]             = useState('');
   const logRef = useRef(null);
 
+  // ── Load container list every 15 s ───────────────────────────────────────
   const load = () =>
     fetch('/api/docker/containers')
       .then(r => r.json())
-      .then(d => { if (Array.isArray(d)) setContainers(d); else setError(d.error); })
+      .then(d => {
+        if (Array.isArray(d)) {
+          setContainers(d);
+          if (!d.find(c => c.id === selected)) setSelected(null);
+        } else setError(d.error);
+      })
       .catch(e => setError(e.message));
 
-  useEffect(() => { load(); const id = setInterval(load, 15000); return () => clearInterval(id); }, []);
+  useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, []);
 
-  // Fetch logs when a container is selected
+  // ── Logs polling when selected + logs tab ────────────────────────────────
   useEffect(() => {
-    if (!selected) return;
+    if (!selected || tab !== 'logs') return;
     setLogsLoading(true);
     const fetchLogs = () =>
-      fetch(`/api/docker/logs/${selected}?tail=300`)
+      fetch(`/api/docker/logs/${selected}?tail=400`)
         .then(r => r.json())
         .then(d => { setLogs(d.logs || d.error || ''); setLogsLoading(false); })
         .catch(() => setLogsLoading(false));
     fetchLogs();
-    const id = setInterval(fetchLogs, 6000);
-    return () => clearInterval(id);
-  }, [selected]);
+    const t = setInterval(fetchLogs, 6000);
+    return () => clearInterval(t);
+  }, [selected, tab]);
 
-  // Auto-scroll logs to bottom
   useEffect(() => {
-    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+    if (logRef.current && !logFilter) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [logs]);
 
-  // Fetch stats for running containers
+  // ── Stats polling when stats tab ─────────────────────────────────────────
   useEffect(() => {
-    if (!containers) return;
-    const running = containers.filter(c => c.state === 'running');
-    running.forEach(c => {
-      fetch(`/api/docker/stats/${c.id}`)
+    if (!selected || tab !== 'stats') return;
+    const fetchStats = () =>
+      fetch(`/api/docker/stats/${selected}`)
         .then(r => r.json())
-        .then(s => { if (!s.error) setStatsMap(prev => ({ ...prev, [c.id]: s })); })
+        .then(s => {
+          if (!s.error) {
+            setStatsMap(prev => ({ ...prev, [selected]: s }));
+            setStatsHistory(prev => {
+              const hist = [...(prev[selected] || []), { ...s, ts: Date.now() }].slice(-30);
+              return { ...prev, [selected]: hist };
+            });
+          }
+        })
         .catch(() => {});
-    });
-  }, [containers]);
+    fetchStats();
+    const t = setInterval(fetchStats, 3000);
+    return () => clearInterval(t);
+  }, [selected, tab]);
 
-  const restart = (id) => {
+  const restart = id => {
     setConfirming(null);
-    fetch(`/api/docker/restart/${id}`, { method: 'POST' })
-      .then(() => setTimeout(load, 2000));
+    fetch(`/api/docker/restart/${id}`, { method: 'POST' }).then(() => setTimeout(load, 2000));
+    toastBus.emit({ level: 'info', title: 'Restarting container', body: containers?.find(c=>c.id===id)?.name });
   };
-
-  const stop = (id) => {
+  const stop = id => {
     setConfirming(null);
-    fetch(`/api/docker/stop/${id}`, { method: 'POST' })
-      .then(() => setTimeout(load, 2000));
+    fetch(`/api/docker/stop/${id}`, { method: 'POST' }).then(() => setTimeout(load, 2000));
+    toastBus.emit({ level: 'warn', title: 'Stopping container', body: containers?.find(c=>c.id===id)?.name });
   };
 
   const stateColor = s => s === 'running' ? 'var(--g)' : s === 'restarting' ? 'oklch(78% 0.16 60)' : 'var(--r)';
-  const stateLabel = s => s === 'running' ? 'Running' : s === 'exited' ? 'Stopped' : s === 'paused' ? 'Paused' : s === 'restarting' ? 'Restarting' : s || 'Unknown';
+
+  // Group by compose project label (containers carry Names[] only; we infer project from name prefix)
+  const grouped = React.useMemo(() => {
+    if (!containers) return {};
+    const q = search.toLowerCase();
+    const filtered = q ? containers.filter(c => c.name.toLowerCase().includes(q) || c.image.toLowerCase().includes(q)) : containers;
+    const groups = {};
+    filtered.forEach(c => {
+      // heuristic: compose project = first segment before '_' if shared prefix exists
+      const project = c.name.includes('_') ? c.name.split('_')[0] : c.name.includes('-') ? c.name.split('-')[0] : 'standalone';
+      if (!groups[project]) groups[project] = [];
+      groups[project].push(c);
+    });
+    return groups;
+  }, [containers, search]);
 
   const selContainer = containers?.find(c => c.id === selected);
 
+  // Sparkline SVG helper
+  const Sparkline = ({ data, key_ }) => {
+    if (!data || data.length < 2) return null;
+    const max = Math.max(...data, 1);
+    const W = 80, H = 28;
+    const pts = data.map((v, i) => `${(i / (data.length-1)) * W},${H - (v/max)*H}`).join(' ');
+    return h('svg', { width: W, height: H, style: { overflow: 'visible' } },
+      h('polyline', { points: pts, fill: 'none', stroke: 'var(--a)', strokeWidth: 1.5, strokeLinejoin: 'round', strokeLinecap: 'round' }),
+    );
+  };
+
   if (error) return h('div', { className: 'docker-error' },
-    h(Icon, { d: I.docker, size: 20 }),
     h('p', null, 'Docker socket unavailable'),
     h('code', null, error),
-    h('p', { style: { fontSize: '.75rem', color: 'var(--t4)', marginTop: 8 } },
-      'Mount the socket in docker-compose.yml: ',
-      h('code', null, '/var/run/docker.sock:/var/run/docker.sock:ro')
-    ),
+    h('p', { style: { fontSize: '.73rem', color: 'var(--t4)', marginTop: 8 } },
+      'Add to docker-compose.yml volumes: ', h('code', null, '/var/run/docker.sock:/var/run/docker.sock')),
   );
 
-  if (!containers) return h('div', { className: 'docker-loading' },
-    h('svg', { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, className: 'spin' },
-      h('path', { d: 'M21 12a9 9 0 11-6.219-8.56' })),
-    ' Loading containers...',
-  );
+  const filteredLogs = logFilter
+    ? logs.split('\n').filter(l => l.toLowerCase().includes(logFilter.toLowerCase())).join('\n')
+    : logs;
 
-  return h('div', { className: 'docker-view' },
+  return h('div', { className: 'docker-layout' },
 
-    // ── Header ──
-    h('div', { className: 'docker-hd' },
-      h('div', { className: 'docker-hd-left' },
-        h('span', { className: 'docker-hd-title' }, 'Docker'),
-        h('span', { className: 'docker-hd-count' },
-          `${containers.filter(c => c.state === 'running').length} running`,
-          ' / ',
-          `${containers.length} total`,
+    // ══ LEFT: container list ════════════════════════════════════════════════
+    h('div', { className: 'docker-list' },
+
+      // Header + search
+      h('div', { className: 'docker-list-hd' },
+        h('div', { className: 'docker-list-title-row' },
+          h('span', { className: 'docker-list-title' }, 'Containers'),
+          containers && h('span', { className: 'docker-list-badge' },
+            `${containers.filter(c=>c.state==='running').length}/${containers.length}`),
+          h('button', { type: 'button', className: 'docker-refresh', onClick: load, title: 'Refresh' },
+            h(Icon, { d: I.refresh, size: 13 })),
+        ),
+        h('div', { className: 'docker-search-row' },
+          h(Icon, { d: I.search, size: 12, style: { color: 'var(--t4)', flexShrink: 0 } }),
+          h('input', {
+            className: 'docker-search', placeholder: 'Filter…',
+            value: search, onChange: e => setSearch(e.target.value),
+          }),
         ),
       ),
-      h('button', { type: 'button', className: 'docker-refresh', onClick: load, title: 'Refresh' },
-        h(Icon, { d: I.refresh, size: 14 }),
-      ),
+
+      // Groups
+      !containers
+        ? h('div', { className: 'docker-list-loading' },
+            h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, className: 'spin' },
+              h('path', { d: 'M21 12a9 9 0 11-6.219-8.56' })),
+            ' Loading…')
+        : h('div', { className: 'docker-groups' },
+            ...Object.entries(grouped).map(([project, cts]) =>
+              h('div', { key: project, className: 'docker-group' },
+                Object.keys(grouped).length > 1 && h('div', { className: 'docker-group-label' }, project),
+                ...cts.map(ct =>
+                  h('div', {
+                    key: ct.id,
+                    className: 'docker-row' + (ct.id === selected ? ' active' : '') + (ct.state !== 'running' ? ' stopped' : ''),
+                    onClick: () => { setSelected(ct.id === selected ? null : ct.id); setTab('logs'); },
+                  },
+                    h('div', { className: 'docker-state-dot', style: { background: stateColor(ct.state), flexShrink: 0 } }),
+                    h('div', { className: 'docker-row-info' },
+                      h('span', { className: 'docker-row-name' }, ct.name),
+                      h('span', { className: 'docker-row-img' }, ct.image.split('/').pop().split(':')[0]),
+                    ),
+                    statsMap[ct.id] && h('span', { className: 'docker-row-cpu' }, `${statsMap[ct.id].cpu}%`),
+                  )
+                )
+              )
+            )
+          )
     ),
 
-    // ── Container grid ──
-    h('div', { className: 'docker-grid' },
-      containers.length === 0
-        ? h('div', { className: 'docker-empty' }, 'No containers found')
-        : containers.map(ct => {
-          const stats   = statsMap[ct.id];
-          const isSel   = ct.id === selected;
-          const isConf  = confirming === ct.id;
-          return h('div', {
-            key: ct.id,
-            className: 'docker-card' + (isSel ? ' selected' : '') + (ct.state !== 'running' ? ' stopped' : ''),
-            onClick: () => setSelected(isSel ? null : ct.id),
-          },
-            h('div', { className: 'docker-card-hd' },
-              h('div', { className: 'docker-state-dot', style: { background: stateColor(ct.state) } }),
-              h('span', { className: 'docker-card-name' }, ct.name),
-              h('div', { className: 'docker-card-actions', onClick: e => e.stopPropagation() },
-                !isConf && h('button', {
-                  type: 'button', className: 'docker-act-btn',
-                  title: ct.state === 'running' ? 'Restart' : 'Start',
-                  onClick: () => setConfirming(ct.id),
-                }, h(Icon, { d: I.refresh, size: 12 })),
-                isConf && h('div', { className: 'docker-confirm' },
-                  h('span', null, 'Restart?'),
-                  h('button', { type: 'button', className: 'docker-confirm-yes', onClick: () => restart(ct.id) }, 'Yes'),
-                  h('button', { type: 'button', className: 'docker-confirm-no',  onClick: () => setConfirming(null) }, 'No'),
+    // ══ RIGHT: detail panel ════════════════════════════════════════════════
+    h('div', { className: 'docker-detail' },
+      !selected
+        ? h('div', { className: 'docker-detail-empty' },
+            h(Icon, { d: I.docker, size: 28, style: { color: 'var(--t4)', opacity: .4 } }),
+            h('p', null, 'Select a container'),
+          )
+        : h(React.Fragment, null,
+
+          // Detail header
+          h('div', { className: 'docker-detail-hd' },
+            h('div', { className: 'docker-state-dot', style: { background: stateColor(selContainer?.state) } }),
+            h('div', { className: 'docker-detail-hd-text' },
+              h('span', { className: 'docker-detail-name' }, selContainer?.name),
+              h('span', { className: 'docker-detail-status' }, selContainer?.status),
+            ),
+            h('div', { className: 'docker-detail-actions' },
+              confirming === selected
+                ? h('div', { className: 'docker-confirm' },
+                    h('span', null, 'Restart?'),
+                    h('button', { type: 'button', className: 'docker-confirm-yes', onClick: () => restart(selected) }, 'Yes'),
+                    h('button', { type: 'button', className: 'docker-confirm-no',  onClick: () => setConfirming(null) }, 'No'),
+                  )
+                : h(React.Fragment, null,
+                    selContainer?.state === 'running' && h('button', {
+                      type: 'button', className: 'docker-act-btn',
+                      onClick: () => setConfirming(selected), title: 'Restart',
+                    }, h(Icon, { d: I.refresh, size: 13 }), ' Restart'),
+                  )
+            ),
+          ),
+
+          // Tabs
+          h('div', { className: 'docker-tabs' },
+            ['logs', 'stats', 'info'].map(t =>
+              h('button', {
+                key: t, type: 'button',
+                className: 'docker-tab' + (tab === t ? ' on' : ''),
+                onClick: () => setTab(t),
+              }, t.charAt(0).toUpperCase() + t.slice(1))
+            )
+          ),
+
+          // ── LOGS TAB ────────────────────────────────────────────────────
+          tab === 'logs' && h('div', { className: 'docker-tab-body' },
+            h('div', { className: 'docker-log-filter-row' },
+              h(Icon, { d: I.search, size: 12, style: { color: 'var(--t4)', flexShrink: 0 } }),
+              h('input', {
+                className: 'docker-log-filter', placeholder: 'Filter logs…',
+                value: logFilter, onChange: e => setLogFilter(e.target.value),
+              }),
+              logsLoading && h('span', { className: 'docker-log-live' }, 'live'),
+            ),
+            h('pre', { className: 'docker-log-body', ref: logRef },
+              filteredLogs || (logsLoading ? 'Loading…' : 'No logs'),
+            ),
+          ),
+
+          // ── STATS TAB ───────────────────────────────────────────────────
+          tab === 'stats' && h('div', { className: 'docker-tab-body docker-stats-body' },
+            (() => {
+              const s    = statsMap[selected];
+              const hist = statsHistory[selected] || [];
+              if (!s) return h('div', { className: 'docker-stats-loading' }, 'Collecting stats…');
+              const cpuHist = hist.map(h => h.cpu);
+              const memHist = hist.map(h => h.memPct);
+              return h(React.Fragment, null,
+                h('div', { className: 'docker-stat-card' },
+                  h('div', { className: 'docker-stat-label' }, 'CPU'),
+                  h('div', { className: 'docker-stat-val' }, `${s.cpu}%`),
+                  h('div', { className: 'docker-stat-bar-wrap' },
+                    h('div', { className: 'docker-stat-bar', style: { width: `${Math.min(s.cpu, 100)}%`, background: s.cpu > 80 ? 'var(--r)' : s.cpu > 50 ? 'oklch(78% 0.16 60)' : 'var(--a)' } }),
+                  ),
+                  h(Sparkline, { data: cpuHist }),
+                ),
+                h('div', { className: 'docker-stat-card' },
+                  h('div', { className: 'docker-stat-label' }, 'Memory'),
+                  h('div', { className: 'docker-stat-val' }, `${s.memMB} MB`, h('span', { className: 'docker-stat-pct' }, ` (${s.memPct}%)`)),
+                  h('div', { className: 'docker-stat-bar-wrap' },
+                    h('div', { className: 'docker-stat-bar', style: { width: `${Math.min(s.memPct, 100)}%`, background: s.memPct > 85 ? 'var(--r)' : s.memPct > 65 ? 'oklch(78% 0.16 60)' : 'var(--g)' } }),
+                  ),
+                  h(Sparkline, { data: memHist }),
+                ),
+              );
+            })()
+          ),
+
+          // ── INFO TAB ────────────────────────────────────────────────────
+          tab === 'info' && h('div', { className: 'docker-tab-body docker-info-body' },
+            selContainer && h(React.Fragment, null,
+              h('div', { className: 'docker-info-row' },
+                h('span', { className: 'docker-info-lbl' }, 'Image'),
+                h('span', { className: 'docker-info-val' }, selContainer.image),
+              ),
+              h('div', { className: 'docker-info-row' },
+                h('span', { className: 'docker-info-lbl' }, 'Container ID'),
+                h('span', { className: 'docker-info-val docker-info-mono' }, selContainer.id),
+              ),
+              h('div', { className: 'docker-info-row' },
+                h('span', { className: 'docker-info-lbl' }, 'State'),
+                h('span', { className: 'docker-info-val' }, selContainer.status),
+              ),
+              selContainer.ports.length > 0 && h('div', { className: 'docker-info-row' },
+                h('span', { className: 'docker-info-lbl' }, 'Ports'),
+                h('div', { className: 'docker-info-ports' },
+                  selContainer.ports.map(p => h('span', { key: p, className: 'docker-port-chip' }, p))
                 ),
               ),
-            ),
-            h('div', { className: 'docker-card-image' }, ct.image.split(':')[0].split('/').pop()),
-            h('div', { className: 'docker-card-status' }, ct.status),
-            stats && h('div', { className: 'docker-card-stats' },
-              h('span', null, `CPU ${stats.cpu}%`),
-              h('span', null, `MEM ${stats.memMB} MB`),
-            ),
-            ct.ports.length > 0 && h('div', { className: 'docker-card-ports' },
-              ct.ports.map(p => h('span', { key: p, className: 'docker-port-chip' }, p))
-            ),
-          );
-        })
-    ),
-
-    // ── Log panel ──
-    selected && h('div', { className: 'docker-log-panel' },
-      h('div', { className: 'docker-log-hd' },
-        h('div', { className: 'docker-log-hd-left' },
-          h('div', { className: 'docker-state-dot', style: { background: stateColor(selContainer?.state) } }),
-          h('span', { className: 'docker-log-name' }, selContainer?.name || selected),
-          logsLoading && h('span', { className: 'docker-log-live' }, 'live'),
-        ),
-        h('button', { type: 'button', className: 'docker-log-close', onClick: () => setSelected(null) },
-          h(Icon, { d: I.x, size: 14 }),
-        ),
-      ),
-      h('pre', { className: 'docker-log-body', ref: logRef },
-        logs || (logsLoading ? 'Loading...' : 'No logs available'),
-      ),
-    ),
-
-    // ── Confirm overlay (global) ──
+              h('div', { className: 'docker-info-row' },
+                h('span', { className: 'docker-info-lbl' }, 'Created'),
+                h('span', { className: 'docker-info-val' },
+                  new Date(selContainer.created * 1000).toLocaleString()),
+              ),
+            )
+          ),
+        )
+    )
   );
 }
+
+
 
 function App() {
   const [cfg, setCfg] = useState(loadCfg);
