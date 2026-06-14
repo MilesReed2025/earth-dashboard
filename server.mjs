@@ -1343,3 +1343,40 @@ app.post("/api/docker/stop/:id", async c => {
     return c.json({ error: e.message }, 503);
   }
 });
+
+// ── Easter eggs ───────────────────────────────────────────────────────────────
+// Fires random log lines so anyone tailing the EARTH container gets a surprise.
+
+const EGG_LINES = [
+  "INFO  [earth] All systems nominal. Totally not held together with duct tape.",
+  "DEBUG [earth] Checked if anyone is watching. They are. Behaving accordingly.",
+  "WARN  [earth] Low entropy detected in /dev/random. Telling it a joke.",
+  "INFO  [earth] Disk usage acceptable. The 400GB of ISOs is definitely research.",
+  "DEBUG [earth] Pinged Google to check internet. Google said hi back.",
+  "INFO  [earth] Cron job completed. It has no idea what it does either.",
+  "WARN  [earth] Fan speed elevated. Server is just really passionate about its work.",
+  "INFO  [earth] Uptime looking healthy. Please do not reboot to install updates.",
+  "DEBUG [earth] Memory usage fine. The leak is a feature we call 'warm cache'.",
+  "ERROR [earth] Could not find a reason to restart. Continuing indefinitely.",
+  "INFO  [earth] Docker socket available. With great power comes great responsibility.",
+  "WARN  [earth] Detected unread documentation. Flagging for eternal procrastination.",
+  "DEBUG [earth] Checked SMART status on all drives. They feel smart. Flattered.",
+  "INFO  [earth] No alerts fired. Either everything is perfect or nothing is monitored.",
+  "WARN  [earth] /tmp growing. Someone is having a good time in there.",
+  "INFO  [earth] SSL cert valid for 89 more days. Setting calendar reminder. Losing it.",
+  "DEBUG [earth] Ran self-diagnostics. Ego within acceptable bounds.",
+  "INFO  [earth] All containers healthy. Even the one you forgot you deployed.",
+  "WARN  [earth] Detected 3am deploy attempt. Routing to /dev/null.",
+  "INFO  [earth] Backup completed. Restore never tested. Classic.",
+];
+
+function fireEasterEgg() {
+  const line = EGG_LINES[Math.floor(Math.random() * EGG_LINES.length)];
+  console.log(line);
+}
+
+// One at startup, then every ~12 minutes ± jitter
+setTimeout(fireEasterEgg, 3_500);
+setInterval(() => {
+  setTimeout(fireEasterEgg, Math.random() * 120_000);
+}, 720_000);
