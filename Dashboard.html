@@ -81,8 +81,8 @@
       --s2:    oklch(39% 0.028 244);
       --t1: oklch(93% 0.010 240);
       --t2: oklch(84% 0.010 238);
-      --t3: oklch(65% 0.013 240);
-      --t4: oklch(48% 0.016 242);
+      --t3: oklch(76% 0.013 240);
+      --t4: oklch(60% 0.016 242);
       --b:  oklch(30% 0.028 248);
       --b2: oklch(38% 0.028 246);
       --a:     oklch(78% 0.006 248);
@@ -104,8 +104,8 @@
       --s2:    oklch(28% 0.025 282);
       --t1: oklch(88% 0.040 276);
       --t2: oklch(78% 0.035 272);
-      --t3: oklch(60% 0.026 274);
-      --t4: oklch(44% 0.022 276);
+      --t3: oklch(72% 0.026 274);
+      --t4: oklch(57% 0.022 276);
       --b:  oklch(21% 0.025 286);
       --b2: oklch(29% 0.026 284);
       --a:     oklch(80% 0.006 290);
@@ -127,8 +127,8 @@
       --s2:    oklch(35% 0.019 56);
       --t1: oklch(89% 0.042 88);
       --t2: oklch(79% 0.036 85);
-      --t3: oklch(61% 0.028 80);
-      --t4: oklch(44% 0.020 75);
+      --t3: oklch(72% 0.028 80);
+      --t4: oklch(57% 0.020 75);
       --b:  oklch(25% 0.018 61);
       --b2: oklch(32% 0.020 59);
       --a:     oklch(78% 0.008 64);
@@ -150,8 +150,8 @@
       --s2:    oklch(31% 0.032 288);
       --t1: oklch(97% 0.010 290);
       --t2: oklch(85% 0.018 285);
-      --t3: oklch(65% 0.022 286);
-      --t4: oklch(46% 0.018 288);
+      --t3: oklch(76% 0.022 286);
+      --t4: oklch(58% 0.018 288);
       --b:  oklch(22% 0.030 291);
       --b2: oklch(30% 0.030 289);
       --a:     oklch(80% 0.22 320);
@@ -173,8 +173,8 @@
       --s2:    oklch(29% 0.027 256);
       --t1: oklch(88% 0.018 256);
       --t2: oklch(76% 0.022 252);
-      --t3: oklch(58% 0.022 254);
-      --t4: oklch(42% 0.018 256);
+      --t3: oklch(70% 0.022 254);
+      --t4: oklch(56% 0.018 256);
       --b:  oklch(19% 0.024 260);
       --b2: oklch(27% 0.026 258);
       --a:     oklch(72% 0.18 264);
@@ -196,8 +196,8 @@
       --s2:    oklch(32% 0.033 332);
       --t1: oklch(87% 0.020 330);
       --t2: oklch(76% 0.024 328);
-      --t3: oklch(58% 0.022 330);
-      --t4: oklch(43% 0.018 332);
+      --t3: oklch(70% 0.022 330);
+      --t4: oklch(56% 0.018 332);
       --b:  oklch(22% 0.032 337);
       --b2: oklch(30% 0.032 335);
       --a:     oklch(76% 0.16 335);
@@ -219,8 +219,8 @@
       --s2:    oklch(33% 0.032 202);
       --t1: oklch(84% 0.028 200);
       --t2: oklch(72% 0.024 198);
-      --t3: oklch(56% 0.020 200);
-      --t4: oklch(42% 0.016 202);
+      --t3: oklch(68% 0.020 200);
+      --t4: oklch(56% 0.016 202);
       --b:  oklch(23% 0.030 207);
       --b2: oklch(31% 0.030 205);
       --a:     oklch(68% 0.22 205);
@@ -242,8 +242,8 @@
       --s2:    oklch(33% 0.015 60);
       --t1: oklch(95% 0.010 68);
       --t2: oklch(83% 0.014 65);
-      --t3: oklch(63% 0.016 62);
-      --t4: oklch(46% 0.012 65);
+      --t3: oklch(74% 0.016 62);
+      --t4: oklch(58% 0.012 65);
       --b:  oklch(22% 0.012 65);
       --b2: oklch(30% 0.014 63);
       --a:     oklch(80% 0.20 140);
@@ -338,6 +338,10 @@
     .docker-info-mono { font-family: ui-monospace, monospace; font-size: .68rem; }
     .docker-info-ports { display: flex; flex-wrap: wrap; gap: 4px; }
     .docker-port-chip { font-size: .62rem; background: var(--inner); border: 1px solid var(--b); border-radius: 4px; padding: 2px 6px; color: var(--t3); font-variant-numeric: tabular-nums; }
+    .yt-mode-tabs { display: flex; gap: 4px; margin-bottom: 14px; background: var(--s1); border: 1px solid var(--b); border-radius: 9px; padding: 3px; }
+    .yt-mode-tab { flex: 1; background: none; border: none; border-radius: 6px; padding: 5px 10px; font-size: .72rem; font-family: inherit; color: var(--t3); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: background .1s, color .1s; }
+    .yt-mode-tab:hover { color: var(--t1); }
+    .yt-mode-tab.on { background: var(--frame); color: var(--t1); box-shadow: 0 1px 3px oklch(0% 0 0 / .12); }
     .docker-error { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 60px 24px; color: var(--t4); text-align: center; }
     .docker-error code { font-size: .72rem; background: var(--s1); padding: 4px 10px; border-radius: 6px; color: var(--r); }
 
@@ -4235,11 +4239,14 @@ function FeedEditForm({ feed, onSave, onCancel }) {
 function YTEditForm({ ch, onSave, onCancel }) {
   const isNew = !ch.id;
   const [d, setD] = useState({ ...ch });
+  const [mode, setMode] = useState('ai');          // 'ai' | 'manual'
   const [selected, setSelected] = useState(new Set());
   const [keywords, setKeywords] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searchErr, setSearchErr] = useState(null);
+  const [manualName, setManualName] = useState(ch.name || '');
+  const [manualId, setManualId]     = useState(ch.channelId || '');
 
   const suggest = async () => {
     const kw = keywords.trim();
@@ -4258,121 +4265,141 @@ function YTEditForm({ ch, onSave, onCancel }) {
       if (!valid.length) throw new Error('No valid channels found. Try broader keywords.');
       setSuggestions(valid);
     } catch (e) {
-      setSearchErr(e.message || 'Suggestion failed. Try again.');
+      setSearchErr(e.message || 'Suggestion failed.');
     }
     setSearching(false);
   };
 
   const toggle = (s) => {
     if (isNew) {
-      setSelected(prev => {
-        const next = new Set(prev);
-        if (next.has(s.channelId)) next.delete(s.channelId); else next.add(s.channelId);
-        return next;
-      });
+      setSelected(prev => { const n = new Set(prev); n.has(s.channelId) ? n.delete(s.channelId) : n.add(s.channelId); return n; });
     } else {
       setD(p => ({ ...p, channelId: s.channelId, name: p.name || s.name }));
     }
   };
-
   const isSel = (s) => isNew ? selected.has(s.channelId) : d.channelId === s.channelId;
 
   const handleSave = () => {
-    if (isNew) onSave(suggestions.filter(s => selected.has(s.channelId)));
-    else onSave(d);
+    if (mode === 'manual') {
+      const id = manualId.trim();
+      const nm = manualName.trim() || id;
+      if (!id) return;
+      if (isNew) onSave([{ name: nm, channelId: id }]);
+      else onSave({ ...d, name: nm, channelId: id });
+    } else {
+      if (isNew) onSave(suggestions.filter(s => selected.has(s.channelId)));
+      else onSave(d);
+    }
   };
 
+  const canSave = mode === 'manual'
+    ? manualId.trim().length > 0
+    : isNew ? selected.size > 0 : !!d.channelId;
+
   return h('div', { className: 'edit-form' },
-    h('div', { className: 'set-f' },
-      h('label', { className: 'set-l' }, 'What are you into?'),
-      h('div', { style: { display: 'flex', gap: 6 } },
-        h('input', {
-          className: 'set-i', value: keywords,
-          onChange: e => setKeywords(e.target.value),
-          onKeyDown: e => e.key === 'Enter' && suggest(),
-          placeholder: 'e.g. linux, cooking, space, finance...',
-          style: { flex: 1 },
-        }),
-        h('button', { type: 'button', className: 'btn btn-s', onClick: suggest, disabled: searching, style: { flex: 'none' } },
-          searching
-            ? h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, className: 'spin' }, h('path', { d: 'M21 12a9 9 0 11-6.219-8.56' }))
-            : h(Icon, { d: I.bolt, size: 13 }),
-          ' Suggest'
-        ),
-      ),
-    ),
-    searchErr && h('p', { style: { fontSize: '.7rem', color: 'var(--r)', margin: '4px 0 8px', lineHeight: 1.4 } }, searchErr),
 
-    (searching || suggestions.length > 0) && h('div', { style: { position: 'relative', margin: '4px 0 10px', minHeight: searching && !suggestions.length ? 88 : 'auto' } },
-      searching && h(React.Fragment, null,
-        h('div', { style: { position: 'absolute', inset: 0, background: 'var(--frame)', opacity: 0.85, borderRadius: 10, zIndex: 10, pointerEvents: 'none' } }),
-        h('div', { style: { position: 'absolute', inset: 0, zIndex: 11, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, pointerEvents: 'none' } },
-          h('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'var(--a)', strokeWidth: 2.5, className: 'spin' }, h('path', { d: 'M21 12a9 9 0 11-6.219-8.56' })),
-          h('span', { style: { fontSize: '.72rem', color: 'var(--t2)', fontWeight: 500 } }, 'Finding channels…'),
+    // Mode tabs (AI suggest vs manual entry)
+    h('div', { className: 'yt-mode-tabs' },
+      h('button', { type: 'button', className: 'yt-mode-tab' + (mode === 'ai' ? ' on' : ''), onClick: () => setMode('ai') },
+        h(Icon, { d: I.bolt, size: 12 }), ' AI suggest'),
+      h('button', { type: 'button', className: 'yt-mode-tab' + (mode === 'manual' ? ' on' : ''), onClick: () => setMode('manual') },
+        h(Icon, { d: I.plus, size: 12 }), ' Manual entry'),
+    ),
+
+    // ── AI mode ──────────────────────────────────────────────────────────
+    mode === 'ai' && h(React.Fragment, null,
+      h('div', { className: 'set-f' },
+        h('label', { className: 'set-l' }, 'What are you into?'),
+        h('div', { style: { display: 'flex', gap: 6 } },
+          h('input', {
+            className: 'set-i', value: keywords,
+            onChange: e => setKeywords(e.target.value),
+            onKeyDown: e => e.key === 'Enter' && suggest(),
+            placeholder: 'e.g. linux, cooking, space, finance…',
+            style: { flex: 1 },
+          }),
+          h('button', { type: 'button', className: 'btn btn-s', onClick: suggest, disabled: searching, style: { flex: 'none' } },
+            searching
+              ? h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, className: 'spin' }, h('path', { d: 'M21 12a9 9 0 11-6.219-8.56' }))
+              : h(Icon, { d: I.bolt, size: 13 }),
+            ' Suggest'
+          ),
         ),
       ),
-      h('div', { style: { display: 'flex', flexDirection: 'column', gap: 5 } },
-        suggestions.map(s => {
-          const sel = isSel(s);
-          return h('div', {
-            key: s.channelId,
-            onClick: () => toggle(s),
-            style: {
-              background: sel ? 'var(--a-lo)' : 'var(--inner)',
-              border: `1px solid ${sel ? 'var(--a)' : 'var(--b)'}`,
-              borderRadius: 8, padding: '8px 11px', cursor: 'pointer',
-              transition: 'background .12s, border-color .12s',
+      searchErr && h('p', { style: { fontSize: '.7rem', color: 'var(--r)', margin: '4px 0 8px', lineHeight: 1.4 } }, searchErr),
+
+      (searching || suggestions.length > 0) && h('div', { style: { position: 'relative', margin: '4px 0 10px', minHeight: searching && !suggestions.length ? 88 : 'auto' } },
+        searching && h(React.Fragment, null,
+          h('div', { style: { position: 'absolute', inset: 0, background: 'var(--frame)', opacity: 0.85, borderRadius: 10, zIndex: 10, pointerEvents: 'none' } }),
+          h('div', { style: { position: 'absolute', inset: 0, zIndex: 11, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, pointerEvents: 'none' } },
+            h('svg', { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'var(--a)', strokeWidth: 2.5, className: 'spin' }, h('path', { d: 'M21 12a9 9 0 11-6.219-8.56' })),
+            h('span', { style: { fontSize: '.72rem', color: 'var(--t2)', fontWeight: 500 } }, 'Finding channels…'),
+          ),
+        ),
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: 5 } },
+          suggestions.map(s => {
+            const sel = isSel(s);
+            return h('div', {
+              key: s.channelId, onClick: () => toggle(s),
+              style: { background: sel ? 'var(--a-lo)' : 'var(--inner)', border: `1px solid ${sel ? 'var(--a)' : 'var(--b)'}`, borderRadius: 8, padding: '8px 11px', cursor: 'pointer', transition: 'background .12s, border-color .12s' },
             },
-          },
-            h('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
-              isNew && h('div', {
-                style: {
-                  width: 15, height: 15, flex: '0 0 15px', borderRadius: 4,
-                  border: `1.5px solid ${sel ? 'var(--a)' : 'var(--t4)'}`,
-                  background: sel ? 'var(--a)' : 'transparent',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all .12s', flexShrink: 0,
+              h('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+                isNew && h('div', {
+                  style: { width: 15, height: 15, flex: '0 0 15px', borderRadius: 4, border: `1.5px solid ${sel ? 'var(--a)' : 'var(--t4)'}`, background: sel ? 'var(--a)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .12s', flexShrink: 0 },
                 },
-              },
-                sel && h('svg', { width: 9, height: 9, viewBox: '0 0 12 12', fill: 'none', stroke: 'oklch(98% 0.005 228)', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' },
-                  h('polyline', { points: '2,6 5,9 10,3' })
-                )
-              ),
-              h('div', { style: { flex: 1, minWidth: 0 } },
-                h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 } },
-                  h('span', { style: { fontSize: '.8rem', fontWeight: 600, color: sel ? 'var(--a)' : 'var(--t1)' } }, s.name),
-                  h('span', { style: { fontSize: '.58rem', color: 'var(--t4)', fontVariantNumeric: 'tabular-nums', letterSpacing: '.01em', flexShrink: 0 } }, s.channelId),
+                  sel && h('svg', { width: 9, height: 9, viewBox: '0 0 12 12', fill: 'none', stroke: 'oklch(98% 0.005 228)', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }, h('polyline', { points: '2,6 5,9 10,3' }))
                 ),
-                s.desc && h('p', { style: { fontSize: '.7rem', color: 'var(--t3)', margin: '2px 0 0', lineHeight: 1.4 } }, s.desc),
+                h('div', { style: { flex: 1, minWidth: 0 } },
+                  h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 } },
+                    h('span', { style: { fontSize: '.8rem', fontWeight: 600, color: sel ? 'var(--a)' : 'var(--t1)' } }, s.name),
+                    h('span', { style: { fontSize: '.58rem', color: 'var(--t4)', fontVariantNumeric: 'tabular-nums', letterSpacing: '.01em', flexShrink: 0 } }, s.channelId),
+                  ),
+                  s.desc && h('p', { style: { fontSize: '.7rem', color: 'var(--t3)', margin: '2px 0 0', lineHeight: 1.4 } }, s.desc),
+                ),
               ),
-            ),
-          );
-        })
+            );
+          })
+        ),
+      ),
+
+      !isNew && d.channelId && h('div', { className: 'set-f', style: { marginBottom: 8 } },
+        h('label', { className: 'set-l' }, 'Channel name'),
+        h('input', { className: 'set-i', value: d.name || '', onChange: e => setD(p => ({ ...p, name: e.target.value })), placeholder: 'Display name' }),
       ),
     ),
 
-    !isNew && d.channelId && h('div', { className: 'set-f', style: { marginBottom: 8 } },
-      h('label', { className: 'set-l' }, 'Display name'),
-      h('input', { className: 'set-i', value: d.name || '', onChange: e => setD(p => ({ ...p, name: e.target.value })), placeholder: 'Channel name' }),
+    // ── Manual mode ───────────────────────────────────────────────────────
+    mode === 'manual' && h(React.Fragment, null,
+      h('p', { style: { fontSize: '.72rem', color: 'var(--t4)', margin: '0 0 12px', lineHeight: 1.5 } },
+        'Find the channel ID by opening the channel on YouTube, then appending ', h('code', { style: { background: 'var(--s1)', padding: '1px 5px', borderRadius: 4 } }, '/about'), ' to the URL.',
+      ),
+      h('div', { className: 'set-f' },
+        h('label', { className: 'set-l' }, 'Channel ID'),
+        h('input', {
+          className: 'set-i', value: manualId,
+          onChange: e => setManualId(e.target.value),
+          placeholder: 'UCxxxxxxxxxxxxxxxxxxxxxxxx',
+          style: { fontFamily: 'ui-monospace, monospace', fontSize: '.78rem' },
+        }),
+      ),
+      h('div', { className: 'set-f' },
+        h('label', { className: 'set-l' }, 'Display name'),
+        h('input', {
+          className: 'set-i', value: manualName,
+          onChange: e => setManualName(e.target.value),
+          placeholder: 'e.g. Linus Tech Tips',
+        }),
+      ),
     ),
 
-    h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 10 } },
-      !isNew && h(ModePicker, { value: d.mode, onChange: v => setD(p => ({ ...p, mode: v })) }),
-      isNew && h('div'),
-      h('div', { style: { display: 'flex', gap: 8 } },
-        isNew
-          ? h('button', { type: 'button', className: 'btn btn-p', onClick: handleSave, disabled: selected.size === 0 },
-              h(Icon, { d: I.plus, size: 13 }),
-              ` Add ${selected.size > 0 ? selected.size + ' ' : ''}channel${selected.size !== 1 ? 's' : ''}`,
-            )
-          : h('button', { type: 'button', className: 'btn btn-p', onClick: handleSave, disabled: !d.channelId || !d.name },
-              h(Icon, { d: I.check, size: 13 }), ' Save',
-            ),
-        h('button', { type: 'button', className: 'btn btn-s', onClick: onCancel }, 'Cancel'),
-      ),
+    // Save / cancel
+    h('div', { style: { display: 'flex', gap: 8, marginTop: 8 } },
+      h('button', { type: 'button', className: 'btn btn-s', onClick: handleSave, disabled: !canSave }, 'Save'),
+      h('button', { type: 'button', className: 'btn btn-s ghost', onClick: onCancel }, 'Cancel'),
     ),
   );
 }
+
 
 /* ─────────────────────────────────────────────────────────
    SETTINGS — CONFIG (raw earth.yaml) TAB
@@ -6743,6 +6770,7 @@ function DockerView() {
   const [containers, setContainers]     = useState(null);
   const [error, setError]               = useState(null);
   const [selected, setSelected]         = useState(null);
+  const selectedRef = useRef(null);
   const [tab, setTab]                   = useState('logs'); // logs | stats | info
   const [logs, setLogs]                 = useState('');
   const [logsLoading, setLogsLoading]   = useState(false);
@@ -6753,6 +6781,9 @@ function DockerView() {
   const [search, setSearch]             = useState('');
   const logRef = useRef(null);
 
+  // Keep a ref in sync so the interval closure always reads the current value
+  useEffect(() => { selectedRef.current = selected; }, [selected]);
+
   // ── Load container list every 15 s ───────────────────────────────────────
   const load = () =>
     fetch('/api/docker/containers')
@@ -6761,7 +6792,7 @@ function DockerView() {
         if (Array.isArray(d)) {
           setContainers(d);
           window.__earthDockerContainers = d;
-          if (!d.find(c => c.id === selected)) setSelected(null);
+          if (selectedRef.current && !d.find(c => c.id === selectedRef.current)) setSelected(null);
         } else setError(d.error);
       })
       .catch(e => setError(e.message));
