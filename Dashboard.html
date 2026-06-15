@@ -427,6 +427,11 @@
     .ew-lock-btn:hover { background: var(--s2); }
     .ew-lock-btn.locked { background: var(--a-lo); border-color: var(--a); color: var(--a); }
 
+    /* Script widget */
+    .ew-script-btn { background: var(--s1); border: 1px solid var(--b); border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: .78rem; color: var(--t2); font-family: inherit; display: inline-flex; align-items: center; gap: 5px; transition: background .1s, border-color .1s; }
+    .ew-script-btn:hover:not(:disabled) { background: var(--a-lo); border-color: var(--a); color: var(--a); }
+    .ew-script-btn.running { opacity: .6; cursor: not-allowed; }
+
     /* Entity add form in settings */
     .entity-add-form { margin-top: 8px; }
     .entity-add-row { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -6329,10 +6334,21 @@ function entityStateColor(state) {
 
 // ── Toggle widget (switch, input_boolean, fan, binary_sensor) ────────────────
 function ToggleWidget({ entity, name }) {
-  const isOn  = entity.state === 'on';
+  const [optimistic, setOptimistic] = useState(null); // null = use real state
+  const isOn  = optimistic !== null ? optimistic : entity.state === 'on';
   const avail = entity.state !== 'unavailable';
   const domain = entity.entity_id.split('.')[0];
-  const toggle = () => haCallService(domain, isOn ? 'turn_off' : 'turn_on', entity.entity_id);
+
+  // Reset optimistic once real state catches up
+  useEffect(() => { setOptimistic(null); }, [entity.state]);
+
+  const toggle = () => {
+    if (!avail) return;
+    const next = !isOn;
+    setOptimistic(next);
+    haCallService(domain, next ? 'turn_on' : 'turn_off', entity.entity_id)
+      .catch(() => setOptimistic(null));
+  };
   return h('div', { className: 'ew-body ew-toggle-body' },
     h('button', {
       type: 'button',
@@ -6349,14 +6365,23 @@ function ToggleWidget({ entity, name }) {
 
 // ── Light widget (toggle + brightness) ───────────────────────────────────────
 function LightWidget({ entity, name }) {
-  const isOn   = entity.state === 'on';
+  const [optimistic, setOptimistic] = useState(null);
+  const isOn   = optimistic !== null ? optimistic : entity.state === 'on';
   const avail  = entity.state !== 'unavailable';
   const bright = entity.attributes?.brightness != null
     ? Math.round((entity.attributes.brightness / 255) * 100)
     : null;
   const supportsBrightness = entity.attributes?.supported_features & 1;
 
-  const toggle = () => haCallService('light', isOn ? 'turn_off' : 'turn_on', entity.entity_id);
+  useEffect(() => { setOptimistic(null); }, [entity.state]);
+
+  const toggle = () => {
+    if (!avail) return;
+    const next = !isOn;
+    setOptimistic(next);
+    haCallService('light', next ? 'turn_on' : 'turn_off', entity.entity_id)
+      .catch(() => setOptimistic(null));
+  };
   const setBright = v =>
     haCallService('light', 'turn_on', entity.entity_id, { brightness_pct: v });
 
@@ -6504,6 +6529,32 @@ function LockWidget({ entity }) {
   );
 }
 
+// ── Script widget ─────────────────────────────────────────────────────────────
+function ScriptWidget({ entity }) {
+  const [running, setRunning] = useState(false);
+  const isRunning = entity.state === 'on' || running;
+  const run = () => {
+    if (isRunning) return;
+    setRunning(true);
+    const scriptName = entity.entity_id.split('.')[1];
+    haCallService('script', scriptName, undefined)
+      .finally(() => setTimeout(() => setRunning(false), 2000));
+  };
+  return h('div', { className: 'ew-body ew-toggle-body' },
+    h('button', {
+      type: 'button',
+      className: 'ew-script-btn' + (isRunning ? ' running' : ''),
+      onClick: run,
+      disabled: isRunning,
+    },
+      isRunning
+        ? h('svg', { width: 11, height: 11, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, className: 'spin' }, h('path', { d: 'M21 12a9 9 0 11-6.219-8.56' }))
+        : '▶',
+      ' ', isRunning ? 'Running…' : 'Run',
+    ),
+  );
+}
+
 // ── Main EntityWidget dispatcher ─────────────────────────────────────────────
 function EntityWidget({ entityId, name, state }) {
   const domain  = entityId.split('.')[0];
@@ -6518,6 +6569,7 @@ function EntityWidget({ entityId, name, state }) {
       case 'input_boolean':
       case 'fan':
       case 'automation':      return h(ToggleWidget, { entity: state, name: label });
+      case 'script':          return h(ScriptWidget,  { entity: state });
       case 'climate':         return h(ClimateWidget, { entity: state });
       case 'cover':           return h(CoverWidget,   { entity: state });
       case 'media_player':    return h(MediaWidget,   { entity: state });
