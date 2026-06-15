@@ -586,6 +586,21 @@ function fmtSI(n) {
     const text = await r.text();
     try { return c.json(JSON.parse(text)); } catch { return c.json({ ok: r.ok }); }
   });
+
+  // GET /api/ha/camera/:entity_id  — proxy HA camera snapshot (auth stays server-side)
+  app.get("/api/ha/camera/:entity_id", async (c) => {
+    if (!HA_URL() || !HA_TOKEN()) return noHA(c);
+    const entity_id = c.req.param("entity_id");
+    const r = await fetch(`${HA_URL()}/api/camera_proxy/${entity_id}`, { headers: haHdr() });
+    if (!r.ok) return c.json({ error: `Camera proxy ${r.status}` }, r.status);
+    const buf = await r.arrayBuffer();
+    return new Response(buf, {
+      headers: {
+        "Content-Type": r.headers.get("Content-Type") || "image/jpeg",
+        "Cache-Control": "no-store",
+      },
+    });
+  });
 }
 
 /* ── TMDB discovery routes ──────────────────────────────────────────────────── */
@@ -885,7 +900,7 @@ app.post("/api/set-calendar-url", async (c) => {
   else content += (content.endsWith("\n") || !content ? "" : "\n") + `CALENDAR_ICS_URL=${url}\n`;
   fs.writeFileSync(envPath, content, "utf8");
   process.env.CALENDAR_ICS_URL = url;
-  cacheStore.delete("cal:today");
+  cacheStore.delete("cal:parsed");
   return c.json({ ok: true });
 });
 
@@ -960,7 +975,7 @@ app.post("/api/set-github-creds", async (c) => {
   let content = "";
   try { content = fs.readFileSync(envPath, "utf8"); } catch {}
   const set = (k, v) => {
-    if (new RegExp(`^${k}\s*=`, "m").test(content)) content = content.replace(new RegExp(`^${k}\s*=.*`, "m"), `${k}=${v}`);
+    if (new RegExp(`^${k}\\s*=`, "m").test(content)) content = content.replace(new RegExp(`^${k}\\s*=.*`, "m"), `${k}=${v}`);
     else content += (content.endsWith("\n") || !content ? "" : "\n") + `${k}=${v}\n`;
   };
   set("GITHUB_TOKEN", token); set("GITHUB_USER", username);
@@ -980,7 +995,7 @@ app.post("/api/set-lastfm-creds", async (c) => {
   let content = "";
   try { content = fs.readFileSync(envPath, "utf8"); } catch {}
   const set = (k, v) => {
-    if (new RegExp(`^${k}\s*=`, "m").test(content)) content = content.replace(new RegExp(`^${k}\s*=.*`, "m"), `${k}=${v}`);
+    if (new RegExp(`^${k}\\s*=`, "m").test(content)) content = content.replace(new RegExp(`^${k}\\s*=.*`, "m"), `${k}=${v}`);
     else content += (content.endsWith("\n") || !content ? "" : "\n") + `${k}=${v}\n`;
   };
   set("LASTFM_KEY", apiKey); set("LASTFM_USER", username);

@@ -430,6 +430,21 @@
     .ew-lock-btn:hover { background: var(--s2); }
     .ew-lock-btn.locked { background: var(--a-lo); border-color: var(--a); color: var(--a); }
 
+    /* Entity sort buttons */
+    .li-sort { display: flex; flex-direction: column; gap: 2px; margin-right: 2px; }
+    .li-sort-btn { background: none; border: none; cursor: pointer; color: var(--t4); font-size: .65rem; line-height: 1; padding: 1px 3px; border-radius: 4px; transition: color .12s, background .12s; }
+    .li-sort-btn:hover:not(:disabled) { color: var(--t1); background: var(--s2); }
+    .li-sort-btn:disabled { opacity: .2; cursor: default; }
+
+    /* Camera widget */
+    .ew-camera { display: flex; flex-direction: column; gap: 6px; }
+    .ew-camera-img { width: 100%; border-radius: 8px; display: block; object-fit: cover; aspect-ratio: 16/9; background: var(--s1); }
+    .ew-camera-img.loading { min-height: 80px; }
+    .ew-camera-ft { display: flex; align-items: center; justify-content: space-between; }
+    .ew-camera-ts { font-size: .62rem; color: var(--t4); }
+    .ew-camera-refresh { background: none; border: 1px solid var(--b); border-radius: 6px; padding: 3px 8px; font-size: .65rem; color: var(--t3); cursor: pointer; font-family: inherit; transition: background .12s; }
+    .ew-camera-refresh:hover { background: var(--s2); color: var(--t1); }
+
     /* Color picker modal */
     .color-modal-overlay { position: fixed; inset: 0; background: oklch(0% 0 0 / .55); z-index: 8000; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn .15s ease-out; }
     .color-modal { background: var(--frame); border: 1px solid var(--b2); border-radius: 18px; padding: 20px; width: 100%; max-width: 320px; box-shadow: 0 20px 60px oklch(0% 0 0 / .4); }
@@ -4721,6 +4736,15 @@ function EntityList({ cfg, save }) {
     if (editIdx === i) setEditIdx(null);
     save({ ...cfg, ha: { ...cfg.ha, widgets: widgets.filter((_, j) => j !== i) } });
   };
+  const move = (i, dir) => {
+    const j = i + dir;
+    if (j < 0 || j >= widgets.length) return;
+    const next = [...widgets];
+    [next[i], next[j]] = [next[j], next[i]];
+    if (editIdx === i) setEditIdx(j);
+    else if (editIdx === j) setEditIdx(i);
+    save({ ...cfg, ha: { ...cfg.ha, widgets: next } });
+  };
 
   if (!widgets.length) return null;
   return h('div', { className: 'entity-list' },
@@ -4749,6 +4773,10 @@ function EntityList({ cfg, save }) {
             h('button', { type: 'button', className: 'mini', onClick: cancelEdit }, 'Cancel'),
           )
         : h('div', { key: w.entity_id, className: 'list-item' },
+            h('div', { className: 'li-sort' },
+              h('button', { type: 'button', className: 'li-sort-btn', onClick: () => move(i, -1), disabled: i === 0, title: 'Move up' }, '▲'),
+              h('button', { type: 'button', className: 'li-sort-btn', onClick: () => move(i, 1), disabled: i === widgets.length - 1, title: 'Move down' }, '▼'),
+            ),
             h('div', { className: 'li-body' },
               h('span', { className: 'li-name' }, w.name || w.entity_id),
               h('span', { className: 'li-url', style: { fontFamily: 'ui-monospace,monospace', fontSize: '.65rem' } }, w.entity_id),
@@ -6759,6 +6787,41 @@ function ScriptWidget({ entity }) {
   );
 }
 
+// ── Camera widget ────────────────────────────────────────────────────────────
+function CameraWidget({ entity }) {
+  const [tick, setTick]     = useState(Date.now());
+  const [loaded, setLoaded] = useState(false);
+  const [ts, setTs]         = useState('');
+  const interval = useRef(null);
+
+  const refresh = () => { setLoaded(false); setTick(Date.now()); };
+
+  useEffect(() => {
+    interval.current = setInterval(refresh, 10000);
+    return () => clearInterval(interval.current);
+  }, []);
+
+  useEffect(() => {
+    if (loaded) setTs(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+  }, [loaded]);
+
+  const src = `/api/ha/camera/${entity.entity_id}?t=${tick}`;
+
+  return h('div', { className: 'ew-camera' },
+    h('img', {
+      className: 'ew-camera-img' + (loaded ? '' : ' loading'),
+      src,
+      alt: entity.attributes?.friendly_name || entity.entity_id,
+      onLoad:  () => setLoaded(true),
+      onError: () => setLoaded(true),
+    }),
+    h('div', { className: 'ew-camera-ft' },
+      h('span', { className: 'ew-camera-ts' }, ts ? `Updated ${ts}` : 'Loading…'),
+      h('button', { type: 'button', className: 'ew-camera-refresh', onClick: refresh }, '↻ Refresh'),
+    ),
+  );
+}
+
 // ── Main EntityWidget dispatcher ─────────────────────────────────────────────
 function EntityWidget({ entityId, name, state }) {
   const domain  = entityId.split('.')[0];
@@ -6782,6 +6845,7 @@ function EntityWidget({ entityId, name, state }) {
       case 'input_number':
       case 'number':          return h(NumberWidget,  { entity: state });
       case 'lock':            return h(LockWidget,    { entity: state });
+      case 'camera':          return h(CameraWidget,  { entity: state });
       case 'sensor':
       case 'binary_sensor':
       case 'weather':
