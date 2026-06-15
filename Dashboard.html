@@ -430,6 +430,58 @@
     .ew-lock-btn:hover { background: var(--s2); }
     .ew-lock-btn.locked { background: var(--a-lo); border-color: var(--a); color: var(--a); }
 
+    /* ── Calendar modal ── */
+    .cal-overlay { position: fixed; inset: 0; background: oklch(0% 0 0 / .6); z-index: 8500; display: flex; align-items: center; justify-content: center; padding: 24px; animation: fadeIn .18s ease-out; backdrop-filter: blur(4px); }
+    .cal-modal { background: var(--frame); border: 1px solid var(--b2); border-radius: 22px; width: 100%; max-width: 820px; max-height: calc(100vh - 48px); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 32px 80px oklch(0% 0 0 / .45); }
+    .cal-head { display: flex; align-items: center; gap: 0; padding: 22px 26px 0; flex-shrink: 0; }
+    .cal-month-label { flex: 1; }
+    .cal-month-name { font-family: 'Fraunces', Georgia, serif; font-style: italic; font-size: 1.9rem; font-weight: 300; color: var(--t1); line-height: 1; letter-spacing: -.03em; }
+    .cal-year { font-size: .78rem; color: var(--t4); margin-top: 2px; letter-spacing: .04em; text-transform: uppercase; }
+    .cal-nav { display: flex; align-items: center; gap: 6px; }
+    .cal-nav-btn { background: var(--s1); border: 1px solid var(--b); border-radius: 9px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--t3); transition: background .12s, color .12s; font-size: .9rem; }
+    .cal-nav-btn:hover { background: var(--s2); color: var(--t1); }
+    .cal-today-btn { background: var(--s1); border: 1px solid var(--b); border-radius: 9px; padding: 0 12px; height: 32px; font-size: .72rem; font-weight: 500; color: var(--t3); cursor: pointer; transition: background .12s; font-family: inherit; }
+    .cal-today-btn:hover { background: var(--a-lo); color: var(--a); }
+    .cal-close { background: none; border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; color: var(--t4); font-size: 1.2rem; display: flex; align-items: center; justify-content: center; margin-left: 4px; transition: background .12s; }
+    .cal-close:hover { background: var(--s2); color: var(--t1); }
+    .cal-body { display: flex; flex: 1; overflow: hidden; }
+    .cal-grid-wrap { flex: 1; display: flex; flex-direction: column; padding: 16px 20px 20px; overflow: hidden; }
+    .cal-dow { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 6px; }
+    .cal-dow-cell { text-align: center; font-size: .6rem; font-weight: 600; color: var(--t4); letter-spacing: .08em; text-transform: uppercase; padding: 4px 0; }
+    .cal-dow-cell:first-child { color: var(--r); opacity: .7; }
+    .cal-dow-cell:last-child { color: var(--r); opacity: .7; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; flex: 1; }
+    .cal-cell { border-radius: 10px; padding: 5px 6px; cursor: pointer; transition: background .1s; min-height: 72px; display: flex; flex-direction: column; gap: 3px; background: transparent; border: 1px solid transparent; }
+    .cal-cell:hover { background: var(--s1); border-color: var(--b); }
+    .cal-cell.other-month { opacity: .3; pointer-events: none; }
+    .cal-cell.selected { background: var(--a-lo); border-color: var(--a); }
+    .cal-cell.today .cal-day-num { background: var(--a); color: oklch(98% 0.005 228); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+    .cal-day-num { font-size: .78rem; font-weight: 500; color: var(--t2); width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; flex-shrink: 0; line-height: 1; }
+    .cal-cell.weekend .cal-day-num { color: var(--t3); }
+    .cal-cell.past .cal-day-num { color: var(--t4); }
+    .cal-events { display: flex; flex-direction: column; gap: 2px; flex: 1; overflow: hidden; }
+    .cal-ev-pill { font-size: .58rem; font-weight: 500; padding: 1px 5px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.5; background: var(--a-lo); color: var(--a); }
+    .cal-ev-pill.ev1 { background: oklch(72% 0.14 145 / .18); color: oklch(58% 0.16 145); }
+    .cal-ev-pill.ev2 { background: oklch(72% 0.14 290 / .18); color: oklch(58% 0.16 290); }
+    .cal-ev-pill.ev3 { background: oklch(78% 0.14 55 / .18); color: oklch(60% 0.16 55); }
+    .cal-ev-more { font-size: .55rem; color: var(--t4); padding-left: 4px; }
+    /* Agenda sidebar */
+    .cal-agenda { width: 260px; flex-shrink: 0; border-left: 1px solid var(--b); padding: 20px 18px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+    .cal-agenda-date { font-size: .68rem; font-weight: 600; color: var(--t4); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 10px; }
+    .cal-agenda-empty { font-size: .78rem; color: var(--t4); margin-top: 8px; }
+    .cal-agenda-ev { background: var(--s1); border: 1px solid var(--b); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+    .cal-agenda-ev-time { font-size: .65rem; color: var(--a); font-weight: 600; letter-spacing: .03em; }
+    .cal-agenda-ev-title { font-size: .8rem; font-weight: 500; color: var(--t1); line-height: 1.3; }
+    .cal-agenda-ev-loc { font-size: .65rem; color: var(--t4); margin-top: 1px; }
+    .cal-loading { display: flex; align-items: center; justify-content: center; flex: 1; color: var(--t4); font-size: .78rem; gap: 8px; }
+
+    /* ── Status quick-add presets ── */
+    .status-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .status-preset-chip { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--b); background: var(--s1); cursor: pointer; transition: background .12s, border-color .12s; font-size: .72rem; color: var(--t2); font-family: inherit; }
+    .status-preset-chip:hover { background: var(--a-lo); border-color: var(--a); color: var(--a); }
+    .status-preset-chip.added { opacity: .35; cursor: default; pointer-events: none; }
+    .status-preset-chip img { width: 13px; height: 13px; border-radius: 2px; object-fit: contain; }
+
     /* Entity sort buttons */
     .li-sort { display: flex; flex-direction: column; gap: 2px; margin-right: 2px; }
     .li-sort-btn { background: none; border: none; cursor: pointer; color: var(--t4); font-size: .65rem; line-height: 1; padding: 1px 3px; border-radius: 4px; transition: color .12s, background .12s; }
@@ -2753,19 +2805,183 @@ function useWeather(lat, lng) {
    TOPBAR CLOCK
 ───────────────────────────────────────────────────────── */
 function ClockChip() {
-  const [t, setT] = useState(new Date());
+  const [t, setT]       = useState(new Date());
+  const [calOpen, setCalOpen] = useState(false);
   useEffect(() => {
     const id = setInterval(() => setT(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
-  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return h('div', { className: 'time-chip' },
-    h('span', { style: { color: 'var(--t4)', fontSize: '.67rem', fontWeight: 500 } },
-      `${DAYS[t.getDay()]} ${t.getDate()} ${MONTHS[t.getMonth()]}`),
-    h('span', { style: { color: 'var(--t4)', margin: '0 1px' } }, '·'),
-    h('b', null, `${padZ(t.getHours())}:${padZ(t.getMinutes())}`),
-    `${padZ(t.getSeconds())}`
+  return h(React.Fragment, null,
+    h('div', {
+      className: 'time-chip',
+      onClick: () => setCalOpen(true),
+      style: { cursor: 'pointer' },
+      title: 'Open calendar',
+    },
+      h('span', { style: { color: 'var(--t4)', fontSize: '.67rem', fontWeight: 500 } },
+        `${DAYS[t.getDay()]} ${t.getDate()} ${MONTHS[t.getMonth()]}`),
+      h('span', { style: { color: 'var(--t4)', margin: '0 1px' } }, '·'),
+      h('b', null, `${padZ(t.getHours())}:${padZ(t.getMinutes())}`),
+      `${padZ(t.getSeconds())}`,
+    ),
+    calOpen && h(CalendarModal, { onClose: () => setCalOpen(false) }),
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   CALENDAR MODAL
+───────────────────────────────────────────────────────── */
+function CalendarModal({ onClose }) {
+  const today = new Date();
+  const [viewYear,  setViewYear]  = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth()); // 0-indexed
+  const [selected,  setSelected]  = useState(today.getDate());
+  const [selYear,   setSelYear]   = useState(today.getFullYear());
+  const [selMonth,  setSelMonth]  = useState(today.getMonth());
+  const [events,    setEvents]    = useState({});   // { 'YYYY-MM-DD': [{title,time,location}] }
+  const [loading,   setLoading]   = useState(true);
+
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const pad = n => String(n).padStart(2,'0');
+
+  // Fetch events for the viewed month
+  useEffect(() => {
+    setLoading(true);
+    const ym = `${viewYear}-${pad(viewMonth + 1)}`;
+    fetch(`/api/calendar/month?month=${ym}`)
+      .then(r => r.json())
+      .then(({ events: evs = [] }) => {
+        const map = {};
+        evs.forEach(ev => {
+          const key = ev.date;
+          if (!map[key]) map[key] = [];
+          map[key].push(ev);
+        });
+        setEvents(map);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [viewYear, viewMonth]);
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+    else setViewMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+    else setViewMonth(m => m + 1);
+  };
+  const goToday = () => {
+    setViewYear(today.getFullYear()); setViewMonth(today.getMonth());
+    setSelected(today.getDate()); setSelYear(today.getFullYear()); setSelMonth(today.getMonth());
+  };
+
+  // Build calendar grid cells
+  const firstDay  = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
+  const daysInMon = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const daysInPrev = new Date(viewYear, viewMonth, 0).getDate();
+  const cells = [];
+  // Previous month tail
+  for (let i = firstDay - 1; i >= 0; i--)
+    cells.push({ day: daysInPrev - i, month: viewMonth - 1, year: viewMonth === 0 ? viewYear - 1 : viewYear, other: true });
+  // Current month
+  for (let d = 1; d <= daysInMon; d++)
+    cells.push({ day: d, month: viewMonth, year: viewYear, other: false });
+  // Next month pad to fill last row
+  const remaining = cells.length % 7 === 0 ? 0 : 7 - (cells.length % 7);
+  for (let d = 1; d <= remaining; d++)
+    cells.push({ day: d, month: viewMonth + 1, year: viewMonth === 11 ? viewYear + 1 : viewYear, other: true });
+
+  const isToday = c => c.day === today.getDate() && c.month === today.getMonth() && c.year === today.getFullYear();
+  const isSelected = c => c.day === selected && c.month === selMonth && c.year === selYear;
+  const isPast  = c => new Date(c.year, c.month, c.day) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const isWkend = c => { const dow = new Date(c.year, c.month, c.day).getDay(); return dow === 0 || dow === 6; };
+  const evKey   = c => `${c.year}-${pad(c.month + 1)}-${pad(c.day)}`;
+
+  // Agenda for selected day
+  const selKey = `${selYear}-${pad(selMonth + 1)}-${pad(selected)}`;
+  const selEvs = events[selKey] || [];
+  const selLabel = new Date(selYear, selMonth, selected)
+    .toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  const pillClasses = ['', 'ev1', 'ev2', 'ev3'];
+
+  return h('div', { className: 'cal-overlay', onClick: e => e.target === e.currentTarget && onClose() },
+    h('div', { className: 'cal-modal' },
+      // Header
+      h('div', { className: 'cal-head' },
+        h('div', { className: 'cal-month-label' },
+          h('div', { className: 'cal-month-name' }, MONTHS[viewMonth]),
+          h('div', { className: 'cal-year' }, viewYear),
+        ),
+        h('div', { className: 'cal-nav' },
+          h('button', { type: 'button', className: 'cal-nav-btn', onClick: prevMonth, title: 'Previous month' }, '‹'),
+          h('button', { type: 'button', className: 'cal-today-btn', onClick: goToday }, 'Today'),
+          h('button', { type: 'button', className: 'cal-nav-btn', onClick: nextMonth, title: 'Next month' }, '›'),
+        ),
+        h('button', { type: 'button', className: 'cal-close', onClick: onClose }, '×'),
+      ),
+      // Body
+      h('div', { className: 'cal-body' },
+        // Grid
+        h('div', { className: 'cal-grid-wrap' },
+          h('div', { className: 'cal-dow' },
+            ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d =>
+              h('div', { key: d, className: 'cal-dow-cell' }, d)
+            ),
+          ),
+          loading
+            ? h('div', { className: 'cal-loading' },
+                h('div', { style: { width: 6, height: 6, borderRadius: '50%', background: 'var(--t4)', animation: 'pulse 1.2s ease-in-out infinite' } }),
+                'Loading…',
+              )
+            : h('div', { className: 'cal-grid' },
+                cells.map((c, i) => {
+                  const key   = evKey(c);
+                  const dayEvs = events[key] || [];
+                  const shown  = dayEvs.slice(0, 2);
+                  const extra  = dayEvs.length - shown.length;
+                  const cls = [
+                    'cal-cell',
+                    c.other   ? 'other-month' : '',
+                    isToday(c)    ? 'today'    : '',
+                    isSelected(c) ? 'selected' : '',
+                    isPast(c) && !isToday(c) ? 'past' : '',
+                    isWkend(c) ? 'weekend' : '',
+                  ].filter(Boolean).join(' ');
+                  return h('div', {
+                    key: i, className: cls,
+                    onClick: () => { setSelected(c.day); setSelMonth(c.month); setSelYear(c.year); },
+                  },
+                    h('div', { className: 'cal-day-num' }, c.day),
+                    h('div', { className: 'cal-events' },
+                      shown.map((ev, j) =>
+                        h('div', { key: j, className: `cal-ev-pill ${pillClasses[j % pillClasses.length]}`, title: ev.title },
+                          ev.title)
+                      ),
+                      extra > 0 && h('div', { className: 'cal-ev-more' }, `+${extra} more`),
+                    ),
+                  );
+                }),
+              ),
+        ),
+        // Agenda sidebar
+        h('div', { className: 'cal-agenda' },
+          h('div', { className: 'cal-agenda-date' }, selLabel),
+          selEvs.length === 0
+            ? h('div', { className: 'cal-agenda-empty' }, 'No events')
+            : selEvs.map((ev, i) =>
+                h('div', { key: i, className: 'cal-agenda-ev' },
+                  ev.time && h('div', { className: 'cal-agenda-ev-time' }, ev.time),
+                  h('div', { className: 'cal-agenda-ev-title' }, ev.title),
+                  ev.location && h('div', { className: 'cal-agenda-ev-loc' }, '📍 ', ev.location),
+                )
+              ),
+        ),
+      ),
+    ),
   );
 }
 
@@ -5175,6 +5391,40 @@ function SettingsView({ cfg, setCfg, backend }) {
         h('code', null, '{"status":{"indicator":"none|minor|major|critical"}}'),
         ' works (Atlassian Statuspage format). Indicators: none = green, minor = yellow, major = orange, critical = red.'
       ),
+      // Quick-add presets
+      h('div', { className: 'set-gtitle', style: { marginBottom: 8 } }, 'Quick add'),
+      h('div', { className: 'status-presets' },
+        [
+      { name: 'GitHub', logo: 'github', url: 'https://www.githubstatus.com/api/v2/status.json' },
+      { name: 'Cloudflare', logo: 'cloudflare', url: 'https://www.cloudflarestatus.com/api/v2/status.json' },
+      { name: 'Discord', logo: 'discord', url: 'https://discordstatus.com/api/v2/status.json' },
+      { name: 'Vercel', logo: 'vercel', url: 'https://www.vercel-status.com/api/v2/status.json' },
+      { name: 'OpenAI', logo: 'openai', url: 'https://status.openai.com/api/v2/status.json' },
+      { name: 'Stripe', logo: 'stripe', url: 'https://status.stripe.com/api/v2/status.json' },
+      { name: 'Linear', logo: 'linear', url: 'https://linearstatus.com/api/v2/status.json' },
+      { name: 'Datadog', logo: 'datadog', url: 'https://status.datadoghq.com/api/v2/status.json' },
+      { name: 'npm', logo: 'npm', url: 'https://status.npmjs.org/api/v2/status.json' },
+      { name: 'Atlassian', logo: 'atlassian', url: 'https://jira-software.status.atlassian.com/api/v2/status.json' },
+      { name: 'Fastly', logo: 'fastly', url: 'https://www.fastlystatus.com/api/v2/status.json' },
+      { name: 'Twilio', logo: 'twilio', url: 'https://status.twilio.com/api/v2/status.json' }
+    ].map(p => {
+          const already = (cfg.externalStatus || []).some(s => s.url === p.url);
+          return h('button', {
+            key: p.name, type: 'button',
+            className: 'status-preset-chip' + (already ? ' added' : ''),
+            title: already ? 'Already added' : `Add ${p.name}`,
+            onClick: () => {
+              if (already) return;
+              const id = 'es' + Date.now();
+              save({ ...cfg, externalStatus: [...(cfg.externalStatus || []), { id, ...p }] });
+            },
+          },
+            h('img', { src: `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${p.logo}.png`, alt: p.name, onError: e => e.target.style.display='none' }),
+            p.name,
+          );
+        })
+      ),
+      h('div', { className: 'set-gtitle', style: { marginBottom: 8 } }, 'Configured'),
       (cfg.externalStatus || []).map(s =>
         editStatus === s.id
           ? h(StatusEditForm, { key: s.id, entry: s, onSave: saveStatusEntry, onCancel: () => setEditStatus(null) })

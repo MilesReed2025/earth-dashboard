@@ -888,6 +888,29 @@ app.get("/api/calendar/today", async (c) => {
     return c.json({ error: String(e?.message || e), events: [] }, 502);
   }
 });
+app.get("/api/calendar/month", async (c) => {
+  const url = process.env.CALENDAR_ICS_URL;
+  if (!url) return c.json({ error: "CALENDAR_ICS_URL not configured", events: [] }, 503);
+  const ym = (c.req.query('month') || '').match(/^\d{4}-\d{2}$/) ? c.req.query('month') : null;
+  try {
+    const allEvents = await cached("cal:parsed", 300_000, async () => {
+      const r = await fetch(url, { signal: AbortSignal.timeout(12_000) });
+      if (!r.ok) throw new Error(`ICS fetch → HTTP ${r.status}`);
+      return parseICS(await r.text());
+    });
+    if (!ym) return c.json({ events: allEvents.slice(0, 200) });
+    const [y, m] = ym.split('-').map(Number);
+    const start = new Date(y, m - 1, 1);
+    const end   = new Date(y, m, 1);
+    const filtered = allEvents.filter(ev => {
+      const d = new Date(ev.date + 'T00:00:00');
+      return d >= start && d < end;
+    });
+    return c.json({ events: filtered });
+  } catch (e) {
+    return c.json({ error: String(e?.message || e), events: [] }, 502);
+  }
+});
 app.get("/api/calendar-status", (c) => c.json({ configured: !!process.env.CALENDAR_ICS_URL }));
 app.post("/api/set-calendar-url", async (c) => {
   const body = await c.req.json().catch(() => ({}));
