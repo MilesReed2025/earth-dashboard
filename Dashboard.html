@@ -366,20 +366,22 @@
 
     /* Toggle */
     .ew-toggle-row { display: flex; align-items: center; gap: 10px; }
-    .ew-toggle-body { flex-direction: row; align-items: center; gap: 10px; }
+    .ew-toggle-body { flex-direction: row; align-items: center; gap: 12px; }
     .ew-toggle {
-      width: 40px; height: 22px; border-radius: 99px; border: none; cursor: pointer;
+      width: 52px; height: 28px; border-radius: 99px; border: none; cursor: pointer;
       background: var(--b2); position: relative; flex-shrink: 0; transition: background .2s;
-      padding: 0;
+      padding: 0; outline-offset: 2px;
     }
     .ew-toggle.on { background: var(--a); }
     .ew-toggle:disabled { opacity: .4; cursor: not-allowed; }
+    .ew-toggle:focus-visible { outline: 2px solid var(--a); }
     .ew-toggle-thumb {
-      position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
-      background: oklch(98% 0.005 228); transition: left .15s ease; box-shadow: 0 1px 3px oklch(0% 0 0 / .2);
+      position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 50%;
+      background: oklch(98% 0.005 228); transition: left .18s cubic-bezier(.4,0,.2,1); box-shadow: 0 1px 4px oklch(0% 0 0 / .25);
     }
-    .ew-toggle.on .ew-toggle-thumb { left: calc(100% - 19px); }
-    .ew-state-label { font-size: .74rem; color: var(--t3); }
+    .ew-toggle.on .ew-toggle-thumb { left: calc(100% - 24px); }
+    .ew-state-label { font-size: .78rem; font-weight: 500; color: var(--t3); min-width: 28px; }
+    .ew-toggle.on + .ew-state-label { color: var(--a); }
 
     /* Slider */
     .ew-slider {
@@ -434,6 +436,9 @@
     .ew-script-btn.running { opacity: .6; cursor: not-allowed; }
 
     /* Entity add form in settings */
+    .entity-list { margin-bottom: 8px; }
+    .entity-edit-row { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--s1); border-radius: 9px; margin-bottom: 4px; flex-wrap: wrap; }
+    .entity-edit-id { font-family: ui-monospace,monospace; font-size: .68rem; color: var(--t4); flex: 2; min-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .entity-add-form { margin-top: 8px; }
     .entity-add-row { display: flex; gap: 6px; flex-wrap: wrap; }
     .entity-add-input { min-width: 120px; }
@@ -4670,6 +4675,73 @@ function LayoutTab({ cfg, save }) {
   );
 }
 
+function EntityList({ cfg, save }) {
+  const [editIdx, setEditIdx] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editRoom, setEditRoom] = useState('');
+
+  const widgets = cfg.ha?.widgets || [];
+
+  const startEdit = (i) => {
+    setEditIdx(i);
+    setEditName(widgets[i].name || '');
+    setEditRoom(widgets[i].room || '');
+  };
+  const cancelEdit = () => setEditIdx(null);
+  const commitEdit = (i) => {
+    const next = widgets.map((w, j) => j === i
+      ? { ...w, name: editName.trim(), room: editRoom.trim() }
+      : w
+    );
+    save({ ...cfg, ha: { ...cfg.ha, widgets: next } });
+    setEditIdx(null);
+  };
+  const remove = (i) => {
+    if (editIdx === i) setEditIdx(null);
+    save({ ...cfg, ha: { ...cfg.ha, widgets: widgets.filter((_, j) => j !== i) } });
+  };
+
+  if (!widgets.length) return null;
+  return h('div', { className: 'entity-list' },
+    widgets.map((w, i) =>
+      editIdx === i
+        ? h('div', { key: w.entity_id, className: 'entity-edit-row' },
+            h('span', { className: 'entity-edit-id' }, w.entity_id),
+            h('input', {
+              className: 'set-i entity-add-input',
+              placeholder: 'Display name',
+              value: editName,
+              onChange: e => setEditName(e.target.value),
+              onKeyDown: e => { if (e.key === 'Enter') commitEdit(i); if (e.key === 'Escape') cancelEdit(); },
+              autoFocus: true,
+              style: { flex: '1.5' },
+            }),
+            h('input', {
+              className: 'set-i entity-add-input',
+              placeholder: 'Room',
+              value: editRoom,
+              onChange: e => setEditRoom(e.target.value),
+              onKeyDown: e => { if (e.key === 'Enter') commitEdit(i); if (e.key === 'Escape') cancelEdit(); },
+              style: { flex: '1' },
+            }),
+            h('button', { type: 'button', className: 'btn btn-s', onClick: () => commitEdit(i) }, 'Save'),
+            h('button', { type: 'button', className: 'mini', onClick: cancelEdit }, 'Cancel'),
+          )
+        : h('div', { key: w.entity_id, className: 'list-item' },
+            h('div', { className: 'li-body' },
+              h('span', { className: 'li-name' }, w.name || w.entity_id),
+              h('span', { className: 'li-url', style: { fontFamily: 'ui-monospace,monospace', fontSize: '.65rem' } }, w.entity_id),
+              w.room && h('span', { className: 'mbadge work', style: { marginLeft: 4 } }, w.room),
+            ),
+            h('div', { className: 'li-acts' },
+              h('button', { type: 'button', className: 'mini', onClick: () => startEdit(i) }, 'Edit'),
+              h('button', { type: 'button', className: 'mini del', onClick: () => remove(i) }, 'Remove'),
+            ),
+          )
+    )
+  );
+}
+
 function EntityAddForm({ cfg, save }) {
   const [newId, setNewId]     = useState('');
   const [newName, setNewName] = useState('');
@@ -5170,21 +5242,7 @@ function SettingsView({ cfg, setCfg, backend }) {
           h('code', null, 'light'), ', ', h('code', null, 'switch'), ', ', h('code', null, 'sensor'), ', ',
           h('code', null, 'climate'), ', and more are supported.'
         ),
-        (cfg.ha?.widgets || []).map((w, i) =>
-          h('div', { key: w.entity_id + i, className: 'list-item' },
-            h('div', { className: 'li-body' },
-              h('span', { className: 'li-name' }, w.name || w.entity_id),
-              h('span', { className: 'li-url', style: { fontFamily: 'ui-monospace,monospace', fontSize: '.65rem' } }, w.entity_id),
-              w.room && h('span', { className: 'mbadge work', style: { marginLeft: 4 } }, w.room),
-            ),
-            h('div', { className: 'li-acts' },
-              h('button', { type: 'button', className: 'mini del', onClick: () => {
-                const next = (cfg.ha?.widgets || []).filter((_, j) => j !== i);
-                save({ ...cfg, ha: { ...cfg.ha, widgets: next } });
-              }}, 'Remove'),
-            ),
-          )
-        ),
+        h(EntityList, { cfg, save }),
         h(EntityAddForm, { cfg, save }),
       ),
 
@@ -6613,7 +6671,7 @@ function EntityWidget({ entityId, name, state }) {
 }
 
 function AutomationsView({ cfg }) {
-  const [tab, setTab] = useState('automations');
+  const [tab, setTab] = useState('entities');
   const autos   = useHAStates('automation');
   const scenes  = useHAStates('scene');
   const scripts = useHAStates('script');
@@ -7137,7 +7195,7 @@ function CommandPalette({ cfg, view, setView, open, onClose, dockerContainers })
       { group: 'Go to', icon: I.news,     label: 'News',        action: () => { setView('news'); onClose(); }, skip: hidden.includes('news') },
       { group: 'Go to', icon: I.film,     label: 'Discover',    action: () => { setView('discover'); onClose(); }, skip: hidden.includes('discover') },
       { group: 'Go to', icon: I.srvr,     label: 'Services',    action: () => { setView('servers'); onClose(); }, skip: hidden.includes('servers') },
-      { group: 'Go to', icon: I.bolt,     label: 'Automations', action: () => { setView('automations'); onClose(); }, skip: hidden.includes('automations') },
+      { group: 'Go to', icon: I.bolt,     label: 'Home',        action: () => { setView('automations'); onClose(); }, skip: hidden.includes('automations') },
       { group: 'Go to', icon: I.docker,   label: 'Docker',      action: () => { setView('docker'); onClose(); }, skip: hidden.includes('docker') },
       { group: 'Go to', icon: I.settings, label: 'Settings',    action: () => { setView('settings'); onClose(); } },
     ].filter(x => !x.skip);
@@ -7730,8 +7788,8 @@ function App() {
       !(cfg.layout?.hiddenNav || []).includes('servers') && h('div', { className: 'ni' + (view === 'servers' ? ' on' : ''), onClick: () => setView('servers'), 'data-label': 'Services' },
         h(Icon, { d: I.srvr }), h('span', { className: 'ni-lbl' }, 'Services')
       ),
-      !(cfg.layout?.hiddenNav || []).includes('automations') && h('div', { className: 'ni' + (view === 'automations' ? ' on' : ''), onClick: () => setView('automations'), 'data-label': 'Automations' },
-        h(Icon, { d: I.bolt }), h('span', { className: 'ni-lbl' }, 'Automations')
+      !(cfg.layout?.hiddenNav || []).includes('automations') && h('div', { className: 'ni' + (view === 'automations' ? ' on' : ''), onClick: () => setView('automations'), 'data-label': 'Home' },
+        h(Icon, { d: I.bolt }), h('span', { className: 'ni-lbl' }, 'Home')
       ),
       !(cfg.layout?.hiddenNav || []).includes('docker') && h('div', {
         className: 'ni' + (view === 'docker' ? ' on' : ''),
@@ -7786,7 +7844,7 @@ function App() {
         { key: 'news',        icon: I.news,   label: 'News',     hidden: (cfg.layout?.hiddenNav||[]).includes('news')        },
         { key: 'discover',    icon: I.film,   label: 'Discover', hidden: (cfg.layout?.hiddenNav||[]).includes('discover')    },
         { key: 'servers',     icon: I.srvr,   label: 'Services', hidden: (cfg.layout?.hiddenNav||[]).includes('servers')     },
-        { key: 'automations', icon: I.bolt,   label: 'Autos',    hidden: (cfg.layout?.hiddenNav||[]).includes('automations') },
+        { key: 'automations', icon: I.bolt,   label: 'Home',    hidden: (cfg.layout?.hiddenNav||[]).includes('automations') },
         { key: 'settings',    icon: I.settings, label: 'Settings' },
       ]
         .filter(n => !n.hidden)
