@@ -6186,11 +6186,24 @@ function useHAStates(domain) {
 }
 
 function haCallService(domain, service, entity_id, data) {
+  console.debug('[HA] calling', domain + '/' + service, entity_id || '');
   return fetch('/api/ha/service', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ domain, service, entity_id, data }),
-  }).then(r => r.json());
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res?.error) console.error('[HA] service error:', res.error);
+    else console.debug('[HA] service ok:', domain + '/' + service);
+    // Refetch entity states shortly after so widgets update quickly
+    setTimeout(() => window.__entityStatesRefetch?.(), 700);
+    return res;
+  })
+  .catch(err => {
+    console.error('[HA] fetch failed:', err);
+    throw err;
+  });
 }
 
 function relTimeHA(isoStr) {
@@ -6319,8 +6332,9 @@ function useEntityStates(entityIds) {
         })
         .catch(() => { if (!dead) setLoading(false); });
     load();
+    window.__entityStatesRefetch = load;
     const t = setInterval(load, 8000);
-    return () => { dead = true; clearInterval(t); };
+    return () => { dead = true; clearInterval(t); if (window.__entityStatesRefetch === load) window.__entityStatesRefetch = null; };
   }, [idsKey]);
   return { states, loading };
 }
@@ -6348,6 +6362,7 @@ function ToggleWidget({ entity, name }) {
     const next = !isOn;
     setOptimistic(next);
     haCallService(domain, next ? 'turn_on' : 'turn_off', entity.entity_id)
+      .then(res => { if (res?.error) setOptimistic(null); })
       .catch(() => setOptimistic(null));
   };
   return h('div', { className: 'ew-body ew-toggle-body' },
@@ -6381,6 +6396,7 @@ function LightWidget({ entity, name }) {
     const next = !isOn;
     setOptimistic(next);
     haCallService('light', next ? 'turn_on' : 'turn_off', entity.entity_id)
+      .then(res => { if (res?.error) setOptimistic(null); })
       .catch(() => setOptimistic(null));
   };
   const setBright = v =>
