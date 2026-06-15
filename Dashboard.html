@@ -430,6 +430,27 @@
     .ew-lock-btn:hover { background: var(--s2); }
     .ew-lock-btn.locked { background: var(--a-lo); border-color: var(--a); color: var(--a); }
 
+    /* Color picker modal */
+    .color-modal-overlay { position: fixed; inset: 0; background: oklch(0% 0 0 / .55); z-index: 8000; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn .15s ease-out; }
+    .color-modal { background: var(--frame); border: 1px solid var(--b2); border-radius: 18px; padding: 20px; width: 100%; max-width: 320px; box-shadow: 0 20px 60px oklch(0% 0 0 / .4); }
+    .color-modal-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .color-modal-title { font-size: .9rem; font-weight: 600; color: var(--t1); text-transform: capitalize; }
+    .color-modal-close { background: var(--s2); border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; color: var(--t3); font-size: 1.1rem; line-height: 1; display: flex; align-items: center; justify-content: center; font-family: inherit; transition: background .12s; }
+    .color-modal-close:hover { background: var(--b2); color: var(--t1); }
+    .color-preview { width: 100%; height: 56px; border-radius: 10px; margin-bottom: 14px; transition: background .15s; border: 1px solid oklch(0% 0 0 / .1); }
+    .color-slider-wrap { margin-bottom: 10px; }
+    .color-slider-label { font-size: .68rem; color: var(--t4); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px; }
+    .color-hue-slider { background: linear-gradient(to right, hsl(0,100%,50%), hsl(30,100%,50%), hsl(60,100%,50%), hsl(90,100%,50%), hsl(120,100%,50%), hsl(150,100%,50%), hsl(180,100%,50%), hsl(210,100%,50%), hsl(240,100%,50%), hsl(270,100%,50%), hsl(300,100%,50%), hsl(330,100%,50%), hsl(360,100%,50%)) !important; height: 10px !important; border-radius: 99px; }
+    .color-sat-slider { background: linear-gradient(to right, oklch(88% 0.01 0), var(--sat-preview-end, hsl(30,100%,50%))) !important; height: 10px !important; border-radius: 99px; }
+    .color-presets { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+    .color-preset { width: 28px; height: 28px; border-radius: 50%; border: 2px solid oklch(0% 0 0 / .12); cursor: pointer; transition: transform .12s, border-color .12s; flex-shrink: 0; }
+    .color-preset:hover { transform: scale(1.18); border-color: oklch(0% 0 0 / .3); }
+    .color-preset.active { border-color: var(--a); transform: scale(1.1); }
+    .color-modal-ft { display: flex; justify-content: flex-end; margin-top: 4px; }
+    /* Color swatch button on LightWidget */
+    .ew-color-btn { width: 20px; height: 20px; border-radius: 50%; border: 2px solid oklch(0% 0 0 / .15); cursor: pointer; flex-shrink: 0; transition: transform .12s, border-color .12s; background: hsl(30,100%,50%); }
+    .ew-color-btn:hover { transform: scale(1.15); border-color: var(--a); }
+
     /* Script widget */
     .ew-script-btn { background: var(--s1); border: 1px solid var(--b); border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: .78rem; color: var(--t2); font-family: inherit; display: inline-flex; align-items: center; gap: 5px; transition: background .1s, border-color .1s; }
     .ew-script-btn:hover:not(:disabled) { background: var(--a-lo); border-color: var(--a); color: var(--a); }
@@ -6437,15 +6458,115 @@ function ToggleWidget({ entity, name }) {
   );
 }
 
-// ── Light widget (toggle + brightness) ───────────────────────────────────────
+// ── Color picker modal ───────────────────────────────────────────────────────
+function ColorModal({ entity, onClose }) {
+  const attrs  = entity.attributes || {};
+  const initH  = attrs.hs_color?.[0] ?? 30;
+  const initS  = attrs.hs_color?.[1] ?? 100;
+  const [hue, setHue] = useState(initH);
+  const [sat, setSat] = useState(initS);
+  const debRef = useRef(null);
+
+  const send = (h, s) => {
+    clearTimeout(debRef.current);
+    debRef.current = setTimeout(() =>
+      haCallService('light', 'turn_on', entity.entity_id, { hs_color: [Math.round(h), Math.round(s)] }), 200);
+  };
+  const changeHue = v => { setHue(v); send(v, sat); };
+  const changeSat = v => { setSat(v); send(hue, v); };
+
+  // Approximate preview: HA hs where S=0 → white, S=100 → vivid
+  const previewCss = sat < 8
+    ? 'oklch(94% 0.01 0)'
+    : `hsl(${hue}, ${sat}%, ${50 + (100 - sat) * 0.22}%)`;
+
+  const satEndCss = `hsl(${hue},100%,50%)`;
+
+  const presets = [
+    { label: 'Warm white', hs: [28,  72], css: 'hsl(28,72%,62%)'  },
+    { label: 'Cool white', hs: [200, 12], css: 'hsl(200,12%,88%)' },
+    { label: 'Red',        hs: [0,  100], css: 'hsl(0,100%,50%)'  },
+    { label: 'Orange',     hs: [25, 100], css: 'hsl(25,100%,50%)' },
+    { label: 'Yellow',     hs: [55, 100], css: 'hsl(55,100%,50%)' },
+    { label: 'Green',      hs: [120,100], css: 'hsl(120,100%,38%)'},
+    { label: 'Cyan',       hs: [185,100], css: 'hsl(185,100%,40%)'},
+    { label: 'Blue',       hs: [240,100], css: 'hsl(240,100%,58%)'},
+    { label: 'Purple',     hs: [270,100], css: 'hsl(270,100%,60%)'},
+    { label: 'Pink',       hs: [320, 90], css: 'hsl(320,90%,58%)' },
+  ];
+
+  const isActive = (p) => Math.abs(hue - p.hs[0]) < 8 && Math.abs(sat - p.hs[1]) < 12;
+
+  return h('div', {
+    className: 'color-modal-overlay',
+    onClick: e => e.target === e.currentTarget && onClose(),
+  },
+    h('div', { className: 'color-modal' },
+      h('div', { className: 'color-modal-hd' },
+        h('span', { className: 'color-modal-title' },
+          attrs.friendly_name || entity.entity_id.split('.')[1].replace(/_/g, ' ')),
+        h('button', { type: 'button', className: 'color-modal-close', onClick: onClose }, '×'),
+      ),
+      h('div', { className: 'color-preview', style: { background: previewCss } }),
+      h('div', { className: 'color-slider-wrap' },
+        h('div', { className: 'color-slider-label' }, 'Hue'),
+        h('input', {
+          type: 'range', min: 0, max: 360, value: hue,
+          className: 'ew-slider color-hue-slider',
+          onChange: e => changeHue(Number(e.target.value)),
+        }),
+      ),
+      h('div', { className: 'color-slider-wrap' },
+        h('div', { className: 'color-slider-label' }, 'Saturation'),
+        h('input', {
+          type: 'range', min: 0, max: 100, value: sat,
+          className: 'ew-slider color-sat-slider',
+          style: { '--sat-preview-end': satEndCss },
+          onChange: e => changeSat(Number(e.target.value)),
+        }),
+      ),
+      h('div', { className: 'color-presets' },
+        presets.map(p =>
+          h('button', {
+            key: p.label, type: 'button', title: p.label,
+            className: 'color-preset' + (isActive(p) ? ' active' : ''),
+            style: { background: p.css },
+            onClick: () => {
+              setHue(p.hs[0]); setSat(p.hs[1]);
+              haCallService('light', 'turn_on', entity.entity_id, { hs_color: p.hs });
+            },
+          })
+        ),
+      ),
+      h('div', { className: 'color-modal-ft' },
+        h('button', { type: 'button', className: 'btn btn-s', onClick: onClose }, 'Done'),
+      ),
+    ),
+  );
+}
+
+// ── Light widget (toggle + brightness + colour) ───────────────────────────────
 function LightWidget({ entity, name }) {
   const [optimistic, setOptimistic] = useState(null);
+  const [showColor, setShowColor]   = useState(false);
+  const attrs = entity.attributes || {};
   const isOn   = optimistic !== null ? optimistic : entity.state === 'on';
   const avail  = entity.state !== 'unavailable';
-  const bright = entity.attributes?.brightness != null
-    ? Math.round((entity.attributes.brightness / 255) * 100)
+  const bright = attrs.brightness != null
+    ? Math.round((attrs.brightness / 255) * 100)
     : null;
-  const supportsBrightness = entity.attributes?.supported_features & 1;
+  const supportsBrightness = attrs.supported_features & 1;
+  const colorModes = attrs.color_modes || [];
+  const supportsColor = colorModes.some(m => ['hs','rgb','rgbw','rgbww','xy'].includes(m))
+    || !!(attrs.supported_features & 16);
+
+  // Current colour swatch (shown on the button)
+  const swatchCss = (() => {
+    if (!isOn) return 'var(--b2)';
+    if (attrs.hs_color) return `hsl(${attrs.hs_color[0]}, ${attrs.hs_color[1]}%, ${50 + (100 - attrs.hs_color[1]) * 0.22}%)`;
+    if (attrs.rgb_color) return `rgb(${attrs.rgb_color.join(',')})`;
+    return 'hsl(45,100%,60%)';
+  })();
 
   useEffect(() => { setOptimistic(null); }, [entity.state]);
 
@@ -6467,12 +6588,20 @@ function LightWidget({ entity, name }) {
         onClick: avail ? toggle : undefined, disabled: !avail,
       }, h('div', { className: 'ew-toggle-thumb' })),
       h('span', { className: 'ew-state-label' }, avail ? (isOn ? (bright != null ? `${bright}%` : 'On') : 'Off') : 'Unavailable'),
+      supportsColor && h('button', {
+        type: 'button',
+        className: 'ew-color-btn',
+        style: { background: swatchCss },
+        title: 'Change colour',
+        onClick: e => { e.stopPropagation(); setShowColor(true); },
+      }),
     ),
     isOn && supportsBrightness && bright != null && h('input', {
       type: 'range', min: 1, max: 100, value: bright,
       className: 'ew-slider',
       onChange: e => setBright(Number(e.target.value)),
     }),
+    showColor && h(ColorModal, { entity, onClose: () => setShowColor(false) }),
   );
 }
 
@@ -6715,14 +6844,14 @@ function AutomationsView({ cfg }) {
   const current = tab === 'automations' ? autos : tab === 'scenes' ? scenes : tab === 'scripts' ? scripts : { loading: entitiesLoading, error: null, data: [] };
 
   if (!backendAvailable) return h('div', { className: 'auto-wrap' },
-    h('div', { className: 'auto-hd' }, h('div', { className: 'auto-title' }, 'Automations')),
+    h('div', { className: 'auto-hd' }, h('div', { className: 'auto-title' }, 'Home')),
     h('div', { className: 'auto-error' }, 'Backend required — start with node server.mjs'),
   );
 
   return h('div', { className: 'auto-wrap' },
     h('div', { className: 'auto-hd' },
       h('div', null,
-        h('div', { className: 'auto-title' }, 'Automations'),
+        h('div', { className: 'auto-title' }, 'Home'),
         haUrl && h('div', { style: { fontSize: '.68rem', color: 'var(--t4)', marginTop: 2 } },
           'Home Assistant · ',
           h('a', { href: haUrl, target: '_blank', rel: 'noopener', style: { color: 'var(--t3)', textDecoration: 'none' } }, haUrl),
