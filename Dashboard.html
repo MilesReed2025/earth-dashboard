@@ -345,6 +345,93 @@
     .docker-error { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 60px 24px; color: var(--t4); text-align: center; }
     .docker-error code { font-size: .72rem; background: var(--s1); padding: 4px 10px; border-radius: 6px; color: var(--r); }
 
+        /* ── ENTITY WIDGETS ──────────────────────────────────────────────── */
+    .entity-room { margin-bottom: 24px; }
+    .entity-room-label { font-size: .62rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--t4); margin-bottom: 10px; }
+    .entity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(188px, 1fr)); gap: 10px; }
+    .entity-widget {
+      background: var(--frame); border: 1px solid var(--b); border-radius: 14px;
+      padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 10px;
+      transition: border-color .15s;
+    }
+    .entity-widget:hover { border-color: var(--b2); }
+    .entity-widget.unavail { opacity: .55; }
+    .ew-header { display: flex; align-items: center; gap: 7px; }
+    .ew-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; transition: background .3s; }
+    .ew-name { font-size: .78rem; font-weight: 600; color: var(--t1); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: capitalize; }
+    .ew-domain { font-size: .58rem; color: var(--t4); flex-shrink: 0; text-transform: uppercase; letter-spacing: .06em; }
+    .ew-body { display: flex; flex-direction: column; gap: 8px; }
+    .ew-loading { color: var(--t4); font-size: .72rem; }
+
+    /* Toggle */
+    .ew-toggle-row { display: flex; align-items: center; gap: 10px; }
+    .ew-toggle-body { flex-direction: row; align-items: center; gap: 10px; }
+    .ew-toggle {
+      width: 40px; height: 22px; border-radius: 99px; border: none; cursor: pointer;
+      background: var(--b2); position: relative; flex-shrink: 0; transition: background .2s;
+      padding: 0;
+    }
+    .ew-toggle.on { background: var(--a); }
+    .ew-toggle:disabled { opacity: .4; cursor: not-allowed; }
+    .ew-toggle-thumb {
+      position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+      background: oklch(98% 0.005 228); transition: left .15s ease; box-shadow: 0 1px 3px oklch(0% 0 0 / .2);
+    }
+    .ew-toggle.on .ew-toggle-thumb { left: calc(100% - 19px); }
+    .ew-state-label { font-size: .74rem; color: var(--t3); }
+
+    /* Slider */
+    .ew-slider {
+      width: 100%; height: 4px; border-radius: 99px; cursor: pointer;
+      accent-color: var(--a); background: var(--b2);
+    }
+
+    /* Sensor */
+    .ew-sensor-body { flex-direction: row; align-items: baseline; gap: 4px; }
+    .ew-sensor-val  { font-size: 1.5rem; font-weight: 300; color: var(--t1); line-height: 1; }
+    .ew-sensor-unit { font-size: .78rem; color: var(--t3); }
+    .ew-number-row  { display: flex; align-items: baseline; gap: 4px; }
+
+    /* Climate */
+    .ew-climate-body { gap: 6px; }
+    .ew-climate-temps { display: flex; align-items: center; gap: 14px; }
+    .ew-climate-current { display: flex; flex-direction: column; font-size: 1.4rem; font-weight: 300; color: var(--t1); line-height: 1.1; }
+    .ew-climate-target  { display: flex; align-items: center; gap: 6px; }
+    .ew-climate-setpoint { font-size: 1.1rem; font-weight: 500; color: var(--a); min-width: 48px; text-align: center; }
+    .ew-climate-label { font-size: .58rem; color: var(--t4); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+    .ew-climate-mode { font-size: .7rem; color: var(--t3); text-transform: capitalize; }
+    .ew-temp-btn { background: var(--s1); border: 1px solid var(--b); border-radius: 6px; width: 24px; height: 24px; cursor: pointer; color: var(--t2); font-size: .9rem; display: flex; align-items: center; justify-content: center; transition: background .1s; }
+    .ew-temp-btn:hover { background: var(--s2); }
+
+    /* Cover */
+    .ew-cover-body { gap: 6px; }
+    .ew-cover-btns { display: flex; gap: 4px; }
+    .ew-cover-btn { flex: 1; background: var(--s1); border: 1px solid var(--b); border-radius: 7px; padding: 5px 4px; cursor: pointer; font-size: .68rem; color: var(--t2); font-family: inherit; transition: background .1s; text-align: center; }
+    .ew-cover-btn:hover { background: var(--s2); }
+
+    /* Media player */
+    .ew-media-body { gap: 7px; }
+    .ew-media-title { font-size: .7rem; color: var(--t3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ew-media-controls { display: flex; align-items: center; gap: 6px; }
+    .ew-media-btn { background: var(--s1); border: 1px solid var(--b); border-radius: 7px; width: 30px; height: 28px; cursor: pointer; color: var(--t2); font-size: .8rem; display: flex; align-items: center; justify-content: center; transition: background .1s; }
+    .ew-media-btn:hover { background: var(--s2); }
+    .ew-media-btn.main { width: 36px; height: 34px; background: var(--a-lo); border-color: var(--a); color: var(--a); font-size: 1rem; }
+
+    /* Person */
+    .ew-person-body { align-items: flex-start; }
+    .ew-person-badge { font-size: .78rem; background: var(--s1); border: 1px solid var(--b); border-radius: 99px; padding: 4px 12px; color: var(--t3); display: inline-flex; align-items: center; gap: 5px; }
+    .ew-person-badge.home { background: var(--a-lo); border-color: var(--a); color: var(--a); }
+
+    /* Lock */
+    .ew-lock-btn { background: var(--s1); border: 1px solid var(--b); border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: .78rem; color: var(--t2); font-family: inherit; transition: background .1s; }
+    .ew-lock-btn:hover { background: var(--s2); }
+    .ew-lock-btn.locked { background: var(--a-lo); border-color: var(--a); color: var(--a); }
+
+    /* Entity add form in settings */
+    .entity-add-form { margin-top: 8px; }
+    .entity-add-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .entity-add-input { min-width: 120px; }
+
         /* ── COMMAND PALETTE ─────────────────────────────────────────── */
     .pal-backdrop {
       position: fixed; inset: 0; z-index: 9000;
@@ -5026,6 +5113,75 @@ function SettingsView({ cfg, setCfg, backend }) {
           ),
         ),
       ),
+      // ── Entity widgets ──────────────────────────────────────────────────────
+      h('div', { className: 'set-g' },
+        h('div', { className: 'set-gtitle' }, 'Entity widgets'),
+        h('p', { className: 'field-hint', style: { marginBottom: 10 } },
+          'Widgets shown in Automations → Entities. Each widget displays and controls a Home Assistant entity. ',
+          h('code', null, 'light'), ', ', h('code', null, 'switch'), ', ', h('code', null, 'sensor'), ', ',
+          h('code', null, 'climate'), ', and more are supported.'
+        ),
+        (cfg.ha?.widgets || []).map((w, i) =>
+          h('div', { key: w.entity_id + i, className: 'list-item' },
+            h('div', { className: 'li-body' },
+              h('span', { className: 'li-name' }, w.name || w.entity_id),
+              h('span', { className: 'li-url', style: { fontFamily: 'ui-monospace,monospace', fontSize: '.65rem' } }, w.entity_id),
+              w.room && h('span', { className: 'mbadge work', style: { marginLeft: 4 } }, w.room),
+            ),
+            h('div', { className: 'li-acts' },
+              h('button', { type: 'button', className: 'mini del', onClick: () => {
+                const next = (cfg.ha?.widgets || []).filter((_, j) => j !== i);
+                save({ ...cfg, ha: { ...cfg.ha, widgets: next } });
+              }}, 'Remove'),
+            ),
+          )
+        ),
+        h('div', { className: 'entity-add-form' },
+          (() => {
+            const [newId, setNewId] = React.useState('');
+            const [newName, setNewName] = React.useState('');
+            const [newRoom, setNewRoom] = React.useState('');
+            const add = () => {
+              const id = newId.trim();
+              if (!id) return;
+              const existing = cfg.ha?.widgets || [];
+              if (existing.find(w => w.entity_id === id)) return;
+              save({ ...cfg, ha: { ...cfg.ha, widgets: [...existing, { entity_id: id, name: newName.trim() || '', room: newRoom.trim() || '' }] } });
+              setNewId(''); setNewName(''); setNewRoom('');
+            };
+            return h(React.Fragment, null,
+              h('div', { className: 'entity-add-row' },
+                h('input', {
+                  className: 'set-i entity-add-input',
+                  placeholder: 'entity_id (e.g. light.living_room)',
+                  value: newId, onChange: e => setNewId(e.target.value),
+                  onKeyDown: e => e.key === 'Enter' && add(),
+                  style: { fontFamily: 'ui-monospace,monospace', fontSize: '.76rem', flex: 2 },
+                }),
+                h('input', {
+                  className: 'set-i entity-add-input',
+                  placeholder: 'Display name (optional)',
+                  value: newName, onChange: e => setNewName(e.target.value),
+                  onKeyDown: e => e.key === 'Enter' && add(),
+                  style: { flex: 1.5 },
+                }),
+                h('input', {
+                  className: 'set-i entity-add-input',
+                  placeholder: 'Room (optional)',
+                  value: newRoom, onChange: e => setNewRoom(e.target.value),
+                  onKeyDown: e => e.key === 'Enter' && add(),
+                  style: { flex: 1 },
+                }),
+                h('button', { type: 'button', className: 'btn btn-s', onClick: add, style: { flex: 'none' } },
+                  h(Icon, { d: I.plus, size: 13 }), ' Add'),
+              ),
+              h('p', { className: 'field-hint', style: { marginTop: 6 } },
+                'Find entity IDs in Home Assistant: Developer Tools → States.'),
+            );
+          })()
+        ),
+      ),
+
       h('div', { className: 'set-g' },
         h('div', { className: 'set-gtitle' }, 'Hidden entities'),
         h('p', { className: 'field-hint', style: { marginBottom: 8 } },
@@ -6130,11 +6286,273 @@ function ScriptCard({ entity, onRun }) {
   );
 }
 
+
+/* ─────────────────────────────────────────────────────────
+   HA ENTITY WIDGETS
+───────────────────────────────────────────────────────── */
+
+// Hook: fetch states for a list of entity IDs, poll every 8s
+function useEntityStates(entityIds) {
+  const [states, setStates] = useState({});
+  const [loading, setLoading] = useState(true);
+  const idsKey = entityIds.join(',');
+  useEffect(() => {
+    if (!entityIds.length || !backendAvailable) { setLoading(false); return; }
+    let dead = false;
+    const load = () =>
+      fetch('/api/ha/states')
+        .then(r => r.json())
+        .then(all => {
+          if (dead) return;
+          if (Array.isArray(all)) {
+            const map = {};
+            all.forEach(e => { if (entityIds.includes(e.entity_id)) map[e.entity_id] = e; });
+            setStates(map);
+          }
+          setLoading(false);
+        })
+        .catch(() => { if (!dead) setLoading(false); });
+    load();
+    const t = setInterval(load, 8000);
+    return () => { dead = true; clearInterval(t); };
+  }, [idsKey]);
+  return { states, loading };
+}
+
+// Helper: colour for on/off/unavailable
+function entityStateColor(state) {
+  if (!state) return 'var(--t4)';
+  if (state === 'on' || state === 'home' || state === 'open' || state === 'playing' || state === 'locked') return 'var(--a)';
+  if (state === 'unavailable' || state === 'unknown') return 'var(--t4)';
+  return 'var(--t3)';
+}
+
+// ── Toggle widget (switch, input_boolean, fan, binary_sensor) ────────────────
+function ToggleWidget({ entity, name }) {
+  const isOn  = entity.state === 'on';
+  const avail = entity.state !== 'unavailable';
+  const domain = entity.entity_id.split('.')[0];
+  const toggle = () => haCallService(domain, isOn ? 'turn_off' : 'turn_on', entity.entity_id);
+  return h('div', { className: 'ew-body ew-toggle-body' },
+    h('button', {
+      type: 'button',
+      className: 'ew-toggle' + (isOn ? ' on' : ''),
+      onClick: avail ? toggle : undefined,
+      disabled: !avail,
+      title: isOn ? 'Turn off' : 'Turn on',
+    },
+      h('div', { className: 'ew-toggle-thumb' }),
+    ),
+    h('span', { className: 'ew-state-label' }, avail ? (isOn ? 'On' : 'Off') : 'Unavailable'),
+  );
+}
+
+// ── Light widget (toggle + brightness) ───────────────────────────────────────
+function LightWidget({ entity, name }) {
+  const isOn   = entity.state === 'on';
+  const avail  = entity.state !== 'unavailable';
+  const bright = entity.attributes?.brightness != null
+    ? Math.round((entity.attributes.brightness / 255) * 100)
+    : null;
+  const supportsBrightness = entity.attributes?.supported_features & 1;
+
+  const toggle = () => haCallService('light', isOn ? 'turn_off' : 'turn_on', entity.entity_id);
+  const setBright = v =>
+    haCallService('light', 'turn_on', entity.entity_id, { brightness_pct: v });
+
+  return h('div', { className: 'ew-body' },
+    h('div', { className: 'ew-toggle-row' },
+      h('button', {
+        type: 'button', className: 'ew-toggle' + (isOn ? ' on' : ''),
+        onClick: avail ? toggle : undefined, disabled: !avail,
+      }, h('div', { className: 'ew-toggle-thumb' })),
+      h('span', { className: 'ew-state-label' }, avail ? (isOn ? (bright != null ? `${bright}%` : 'On') : 'Off') : 'Unavailable'),
+    ),
+    isOn && supportsBrightness && bright != null && h('input', {
+      type: 'range', min: 1, max: 100, value: bright,
+      className: 'ew-slider',
+      onChange: e => setBright(Number(e.target.value)),
+    }),
+  );
+}
+
+// ── Sensor widget ─────────────────────────────────────────────────────────────
+function SensorWidget({ entity }) {
+  const unit  = entity.attributes?.unit_of_measurement || '';
+  const val   = entity.state;
+  const isNum = !isNaN(parseFloat(val));
+  const icon  = entity.attributes?.device_class;
+  return h('div', { className: 'ew-body ew-sensor-body' },
+    h('span', { className: 'ew-sensor-val' }, val === 'unavailable' ? '—' : val),
+    unit && h('span', { className: 'ew-sensor-unit' }, unit),
+  );
+}
+
+// ── Climate widget ────────────────────────────────────────────────────────────
+function ClimateWidget({ entity }) {
+  const current = entity.attributes?.current_temperature;
+  const target  = entity.attributes?.temperature;
+  const mode    = entity.state; // heat, cool, auto, off
+  const unit    = entity.attributes?.temperature_unit || '°';
+
+  const setTemp = delta => {
+    if (target == null) return;
+    haCallService('climate', 'set_temperature', entity.entity_id, { temperature: Math.round((target + delta) * 2) / 2 });
+  };
+
+  return h('div', { className: 'ew-body ew-climate-body' },
+    h('div', { className: 'ew-climate-temps' },
+      h('div', { className: 'ew-climate-current' },
+        current != null ? `${current}${unit}` : '—',
+        h('span', { className: 'ew-climate-label' }, 'current'),
+      ),
+      target != null && h('div', { className: 'ew-climate-target' },
+        h('button', { type:'button', className:'ew-temp-btn', onClick: () => setTemp(-0.5) }, '−'),
+        h('span', { className: 'ew-climate-setpoint' }, `${target}${unit}`),
+        h('button', { type:'button', className:'ew-temp-btn', onClick: () => setTemp(0.5) }, '+'),
+        h('span', { className: 'ew-climate-label' }, 'set'),
+      ),
+    ),
+    h('span', { className: 'ew-climate-mode', style: { color: mode === 'off' ? 'var(--t4)' : 'var(--a)' } }, mode),
+  );
+}
+
+// ── Cover widget (blinds, garage, etc.) ──────────────────────────────────────
+function CoverWidget({ entity }) {
+  const state   = entity.state; // open, closed, opening, closing
+  const pos     = entity.attributes?.current_position;
+  const call    = svc => haCallService('cover', svc, entity.entity_id);
+  return h('div', { className: 'ew-body ew-cover-body' },
+    h('div', { className: 'ew-cover-btns' },
+      h('button', { type:'button', className:'ew-cover-btn', onClick: () => call('open_cover'),  title:'Open'  }, '↑ Open'),
+      h('button', { type:'button', className:'ew-cover-btn', onClick: () => call('stop_cover'),  title:'Stop'  }, '⏸ Stop'),
+      h('button', { type:'button', className:'ew-cover-btn', onClick: () => call('close_cover'), title:'Close' }, '↓ Close'),
+    ),
+    h('span', { className: 'ew-state-label' }, pos != null ? `${pos}%` : state),
+  );
+}
+
+// ── Media player widget ───────────────────────────────────────────────────────
+function MediaWidget({ entity }) {
+  const state   = entity.state; // playing, paused, idle, off
+  const title   = entity.attributes?.media_title || entity.attributes?.friendly_name || '';
+  const vol     = entity.attributes?.volume_level != null
+    ? Math.round(entity.attributes.volume_level * 100)
+    : null;
+  const call    = svc => haCallService('media_player', svc, entity.entity_id);
+  const setVol  = v  => haCallService('media_player', 'volume_set', entity.entity_id, { volume_level: v / 100 });
+
+  return h('div', { className: 'ew-body ew-media-body' },
+    title && h('div', { className: 'ew-media-title' }, title),
+    h('div', { className: 'ew-media-controls' },
+      h('button', { type:'button', className:'ew-media-btn', onClick: () => call('media_previous_track') }, '⏮'),
+      h('button', { type:'button', className:'ew-media-btn main', onClick: () => call(state === 'playing' ? 'media_pause' : 'media_play') },
+        state === 'playing' ? '⏸' : '▶'),
+      h('button', { type:'button', className:'ew-media-btn', onClick: () => call('media_next_track') }, '⏭'),
+    ),
+    vol != null && h('input', {
+      type: 'range', min: 0, max: 100, value: vol,
+      className: 'ew-slider',
+      onChange: e => setVol(Number(e.target.value)),
+    }),
+  );
+}
+
+// ── Person / device_tracker widget ───────────────────────────────────────────
+function PersonWidget({ entity }) {
+  const state  = entity.state; // home, not_home, or zone name
+  const isHome = state === 'home';
+  return h('div', { className: 'ew-body ew-person-body' },
+    h('div', { className: 'ew-person-badge' + (isHome ? ' home' : '') },
+      isHome ? '🏠 Home' : `📍 ${state === 'not_home' ? 'Away' : state}`,
+    ),
+  );
+}
+
+// ── Input number / number ─────────────────────────────────────────────────────
+function NumberWidget({ entity }) {
+  const val  = parseFloat(entity.state);
+  const min  = entity.attributes?.min  ?? 0;
+  const max  = entity.attributes?.max  ?? 100;
+  const step = entity.attributes?.step ?? 1;
+  const unit = entity.attributes?.unit_of_measurement || '';
+  const domain = entity.entity_id.split('.')[0];
+  const set  = v => haCallService(domain, 'set_value', entity.entity_id, { value: v });
+  return h('div', { className: 'ew-body' },
+    h('div', { className: 'ew-number-row' },
+      h('span', { className: 'ew-sensor-val' }, isNaN(val) ? '—' : val),
+      unit && h('span', { className: 'ew-sensor-unit' }, unit),
+    ),
+    h('input', {
+      type: 'range', min, max, step, value: isNaN(val) ? min : val,
+      className: 'ew-slider',
+      onChange: e => set(Number(e.target.value)),
+    }),
+  );
+}
+
+// ── Lock widget ───────────────────────────────────────────────────────────────
+function LockWidget({ entity }) {
+  const locked = entity.state === 'locked';
+  const call   = svc => haCallService('lock', svc, entity.entity_id);
+  return h('div', { className: 'ew-body ew-toggle-body' },
+    h('button', {
+      type: 'button',
+      className: 'ew-lock-btn' + (locked ? ' locked' : ''),
+      onClick: () => call(locked ? 'unlock' : 'lock'),
+    }, locked ? '🔒 Locked' : '🔓 Unlocked'),
+  );
+}
+
+// ── Main EntityWidget dispatcher ─────────────────────────────────────────────
+function EntityWidget({ entityId, name, state }) {
+  const domain  = entityId.split('.')[0];
+  const label   = name || state?.attributes?.friendly_name || entityId.split('.')[1].replace(/_/g, ' ');
+  const isUnavail = !state || state.state === 'unavailable';
+
+  const body = () => {
+    if (!state) return h('div', { className: 'ew-loading' }, '…');
+    switch (domain) {
+      case 'light':           return h(LightWidget,  { entity: state, name: label });
+      case 'switch':
+      case 'input_boolean':
+      case 'fan':
+      case 'automation':      return h(ToggleWidget, { entity: state, name: label });
+      case 'climate':         return h(ClimateWidget, { entity: state });
+      case 'cover':           return h(CoverWidget,   { entity: state });
+      case 'media_player':    return h(MediaWidget,   { entity: state });
+      case 'person':
+      case 'device_tracker':  return h(PersonWidget,  { entity: state });
+      case 'input_number':
+      case 'number':          return h(NumberWidget,  { entity: state });
+      case 'lock':            return h(LockWidget,    { entity: state });
+      case 'sensor':
+      case 'binary_sensor':
+      case 'weather':
+      default:                return h(SensorWidget,  { entity: state });
+    }
+  };
+
+  return h('div', { className: 'entity-widget' + (isUnavail ? ' unavail' : '') },
+    h('div', { className: 'ew-header' },
+      h('div', { className: 'ew-dot', style: { background: isUnavail ? 'var(--t4)' : entityStateColor(state?.state) } }),
+      h('span', { className: 'ew-name' }, label),
+      h('span', { className: 'ew-domain' }, domain.replace(/_/g, ' ')),
+    ),
+    body(),
+  );
+}
+
 function AutomationsView({ cfg }) {
   const [tab, setTab] = useState('automations');
   const autos   = useHAStates('automation');
   const scenes  = useHAStates('scene');
   const scripts = useHAStates('script');
+
+  // Entities tab
+  const widgets   = cfg.ha?.widgets || [];
+  const entityIds = widgets.map(w => w.entity_id);
+  const { states: entityStates, loading: entitiesLoading } = useEntityStates(entityIds);
 
   const haUrl = cfg.ha?.url || cfg.services?.find(s => (s.adapter || s.logo) === 'home-assistant')?.url || null;
   const hidden = new Set(cfg.ha?.hiddenEntities || []);
@@ -6161,12 +6579,13 @@ function AutomationsView({ cfg }) {
     });
 
   const tabs = [
+    { key: 'entities',    label: 'Entities',    count: widgets.length },
     { key: 'automations', label: 'Automations', count: visibleAutos.length },
     { key: 'scenes',      label: 'Scenes',      count: filterEntities(scenes.data).length },
     { key: 'scripts',     label: 'Scripts',     count: filterEntities(scripts.data).length },
   ];
 
-  const current = tab === 'automations' ? autos : tab === 'scenes' ? scenes : scripts;
+  const current = tab === 'automations' ? autos : tab === 'scenes' ? scenes : tab === 'scripts' ? scripts : { loading: entitiesLoading, error: null, data: [] };
 
   if (!backendAvailable) return h('div', { className: 'auto-wrap' },
     h('div', { className: 'auto-hd' }, h('div', { className: 'auto-title' }, 'Automations')),
@@ -6198,7 +6617,40 @@ function AutomationsView({ cfg }) {
       'Connecting to Home Assistant…',
     ),
 
-    !current.loading && !current.error && h('div', { className: 'auto-grid' },
+    // ── Entities tab ────────────────────────────────────────────────────────
+    tab === 'entities' && h('div', null,
+      widgets.length === 0
+        ? h('div', { className: 'auto-empty' },
+            h('div', { className: 'auto-empty-title' }, 'No entity widgets configured'),
+            h('div', { style: { fontSize: '.72rem', color: 'var(--t4)', marginTop: 4 } }, 'Add entities in Settings → Automations → Entities'),
+          )
+        : (() => {
+            // Group by room
+            const rooms = {};
+            widgets.forEach(w => {
+              const room = w.room || 'Widgets';
+              if (!rooms[room]) rooms[room] = [];
+              rooms[room].push(w);
+            });
+            return h(React.Fragment, null,
+              ...Object.entries(rooms).map(([room, ws]) =>
+                h('div', { key: room, className: 'entity-room' },
+                  Object.keys(rooms).length > 1 && h('div', { className: 'entity-room-label' }, room),
+                  h('div', { className: 'entity-grid' },
+                    ws.map(w => h(EntityWidget, {
+                      key: w.entity_id,
+                      entityId: w.entity_id,
+                      name: w.name,
+                      state: entityStates[w.entity_id] || null,
+                    }))
+                  ),
+                )
+              )
+            );
+          })()
+    ),
+
+    tab !== 'entities' && !current.loading && !current.error && h('div', { className: 'auto-grid' },
       tab === 'automations' && visibleAutos
         .map(e => h(AutomationCard, { key: e.entity_id, entity: e, onToggle, onTrigger })),
 
