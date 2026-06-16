@@ -483,10 +483,12 @@
     .status-preset-chip img { width: 13px; height: 13px; border-radius: 2px; object-fit: contain; }
 
     /* Entity sort buttons */
-    .li-sort { display: flex; flex-direction: column; gap: 2px; margin-right: 2px; }
-    .li-sort-btn { background: none; border: none; cursor: pointer; color: var(--t4); font-size: .65rem; line-height: 1; padding: 1px 3px; border-radius: 4px; transition: color .12s, background .12s; }
-    .li-sort-btn:hover:not(:disabled) { color: var(--t1); background: var(--s2); }
-    .li-sort-btn:disabled { opacity: .2; cursor: default; }
+    .li-drag { display: flex; align-items: center; justify-content: center; width: 18px; flex-shrink: 0; color: var(--t4); cursor: grab; opacity: 0; transition: opacity .12s, color .12s; user-select: none; }
+    .li-drag:active { cursor: grabbing; }
+    .list-item:hover .li-drag { opacity: 1; }
+    .list-item.drag-over-top { box-shadow: inset 0 2px 0 var(--a); }
+    .list-item.drag-over-bot { box-shadow: inset 0 -2px 0 var(--a); }
+    .list-item.dragging { opacity: .35; }
 
     /* Camera widget */
     .ew-camera { display: flex; flex-direction: column; gap: 6px; }
@@ -4953,79 +4955,108 @@ function EntityList({ cfg, save }) {
   const [editIdx, setEditIdx] = useState(null);
   const [editName, setEditName] = useState('');
   const [editRoom, setEditRoom] = useState('');
+  const [dragIdx, setDragIdx] = useState(null);
+  const [overIdx, setOverIdx] = useState(null);  // positive = above, negative = below (encoded)
 
   const widgets = cfg.ha?.widgets || [];
 
-  const startEdit = (i) => {
-    setEditIdx(i);
-    setEditName(widgets[i].name || '');
-    setEditRoom(widgets[i].room || '');
-  };
+  const startEdit = (i) => { setEditIdx(i); setEditName(widgets[i].name || ''); setEditRoom(widgets[i].room || ''); };
   const cancelEdit = () => setEditIdx(null);
   const commitEdit = (i) => {
-    const next = widgets.map((w, j) => j === i
-      ? { ...w, name: editName.trim(), room: editRoom.trim() }
-      : w
-    );
-    save({ ...cfg, ha: { ...cfg.ha, widgets: next } });
+    save({ ...cfg, ha: { ...cfg.ha, widgets: widgets.map((w, j) => j === i ? { ...w, name: editName.trim(), room: editRoom.trim() } : w) } });
     setEditIdx(null);
   };
   const remove = (i) => {
     if (editIdx === i) setEditIdx(null);
     save({ ...cfg, ha: { ...cfg.ha, widgets: widgets.filter((_, j) => j !== i) } });
   };
-  const move = (i, dir) => {
-    const j = i + dir;
-    if (j < 0 || j >= widgets.length) return;
+
+  const onDragStart = (e, i) => {
+    setDragIdx(i);
+    e.dataTransfer.effectAllowed = 'move';
+    // Defer opacity so ghost image captures the full item
+    setTimeout(() => setDragIdx(i), 0);
+  };
+  const onDragOver = (e, i) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    // Determine if dropping above or below mid-point of target
+    const rect = e.currentTarget.getBoundingClientRect();
+    const half = rect.top + rect.height / 2;
+    setOverIdx(e.clientY < half ? i : -(i + 1)); // negative = "below item i"
+  };
+  const onDrop = (e, i) => {
+    e.preventDefault();
+    if (dragIdx === null) return;
+    // Resolve insertion index
+    const below = overIdx !== null && overIdx < 0;
+    const insertAt = below ? Math.abs(overIdx) - 1 + 1 : (overIdx ?? i); // insert before or after
     const next = [...widgets];
-    [next[i], next[j]] = [next[j], next[i]];
-    if (editIdx === i) setEditIdx(j);
-    else if (editIdx === j) setEditIdx(i);
+    const [moved] = next.splice(dragIdx, 1);
+    const adjusted = insertAt > dragIdx ? insertAt - 1 : insertAt;
+    next.splice(adjusted, 0, moved);
+    if (editIdx === dragIdx) setEditIdx(adjusted);
+    setDragIdx(null); setOverIdx(null);
     save({ ...cfg, ha: { ...cfg.ha, widgets: next } });
   };
+  const onDragEnd = () => { setDragIdx(null); setOverIdx(null); };
+
+  const dragHandle = () => h('div', { className: 'li-drag', 'aria-hidden': 'true' },
+    h('svg', { width: 12, height: 16, viewBox: '0 0 12 16', fill: 'currentColor' },
+      h('circle', { cx: 3.5, cy: 3.5, r: 1.5 }),
+      h('circle', { cx: 8.5, cy: 3.5, r: 1.5 }),
+      h('circle', { cx: 3.5, cy: 8, r: 1.5 }),
+      h('circle', { cx: 8.5, cy: 8, r: 1.5 }),
+      h('circle', { cx: 3.5, cy: 12.5, r: 1.5 }),
+      h('circle', { cx: 8.5, cy: 12.5, r: 1.5 }),
+    )
+  );
 
   if (!widgets.length) return null;
   return h('div', { className: 'entity-list' },
-    widgets.map((w, i) =>
-      editIdx === i
+    widgets.map((w, i) => {
+      const isOver = overIdx !== null && (overIdx === i || overIdx === -(i + 1));
+      const overTop = isOver && overIdx === i;
+      const overBot = isOver && overIdx === -(i + 1);
+      return editIdx === i
         ? h('div', { key: w.entity_id, className: 'entity-edit-row' },
             h('span', { className: 'entity-edit-id' }, w.entity_id),
             h('input', {
-              className: 'set-i entity-add-input',
-              placeholder: 'Display name',
-              value: editName,
-              onChange: e => setEditName(e.target.value),
+              className: 'set-i entity-add-input', placeholder: 'Display name',
+              value: editName, onChange: e => setEditName(e.target.value),
               onKeyDown: e => { if (e.key === 'Enter') commitEdit(i); if (e.key === 'Escape') cancelEdit(); },
-              autoFocus: true,
-              style: { flex: '1.5' },
+              autoFocus: true, style: { flex: '1.5' },
             }),
             h('input', {
-              className: 'set-i entity-add-input',
-              placeholder: 'Room',
-              value: editRoom,
-              onChange: e => setEditRoom(e.target.value),
+              className: 'set-i entity-add-input', placeholder: 'Room / Section',
+              value: editRoom, onChange: e => setEditRoom(e.target.value),
               onKeyDown: e => { if (e.key === 'Enter') commitEdit(i); if (e.key === 'Escape') cancelEdit(); },
               style: { flex: '1' },
             }),
             h('button', { type: 'button', className: 'btn btn-s', onClick: () => commitEdit(i) }, 'Save'),
             h('button', { type: 'button', className: 'mini', onClick: cancelEdit }, 'Cancel'),
           )
-        : h('div', { key: w.entity_id, className: 'list-item' },
-            h('div', { className: 'li-sort' },
-              h('button', { type: 'button', className: 'li-sort-btn', onClick: () => move(i, -1), disabled: i === 0, title: 'Move up' }, '▲'),
-              h('button', { type: 'button', className: 'li-sort-btn', onClick: () => move(i, 1), disabled: i === widgets.length - 1, title: 'Move down' }, '▼'),
-            ),
+        : h('div', {
+            key: w.entity_id,
+            className: ['list-item', dragIdx === i ? 'dragging' : '', overTop ? 'drag-over-top' : '', overBot ? 'drag-over-bot' : ''].filter(Boolean).join(' '),
+            draggable: true,
+            onDragStart: e => onDragStart(e, i),
+            onDragOver:  e => onDragOver(e, i),
+            onDrop:      e => onDrop(e, i),
+            onDragEnd,
+          },
+            dragHandle(),
             h('div', { className: 'li-body' },
               h('span', { className: 'li-name' }, w.name || w.entity_id),
               h('span', { className: 'li-url', style: { fontFamily: 'ui-monospace,monospace', fontSize: '.65rem' } }, w.entity_id),
               w.room && h('span', { className: 'mbadge work', style: { marginLeft: 4 } }, w.room),
             ),
             h('div', { className: 'li-acts' },
-              h('button', { type: 'button', className: 'mini', onClick: () => startEdit(i) }, 'Edit'),
-              h('button', { type: 'button', className: 'mini del', onClick: () => remove(i) }, 'Remove'),
+              h('button', { type: 'button', className: 'mini', onClick: e => { e.stopPropagation(); startEdit(i); } }, 'Edit'),
+              h('button', { type: 'button', className: 'mini del', onClick: e => { e.stopPropagation(); remove(i); } }, 'Remove'),
             ),
-          )
-    )
+          );
+    })
   );
 }
 
