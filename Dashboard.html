@@ -5059,7 +5059,7 @@ function EntityAddForm({ cfg, save }) {
       }),
       h('input', {
         className: 'set-i entity-add-input',
-        placeholder: 'Room (optional)',
+        placeholder: 'Room / Section (optional)',
         value: newRoom, onChange: e => setNewRoom(e.target.value),
         onKeyDown: e => e.key === 'Enter' && add(),
         style: { flex: 1 },
