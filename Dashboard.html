@@ -5321,8 +5321,8 @@ function SettingsView({ cfg, setCfg, backend }) {
             )
           ),
           (cfg.weatherPersonality === 'custom') && h('textarea', {
-            className: 'set-input',
-            style: { marginTop: 8, width: '100%', minHeight: 90, resize: 'vertical', fontFamily: 'inherit', fontSize: 13 },
+            className: 'set-i',
+            style: { marginTop: 8, minHeight: 90, resize: 'vertical' },
             placeholder: 'Describe how the forecast should sound, e.g. "You are a pirate captain who treats every forecast as a voyage briefing…"',
             value: cfg.weatherCustomPrompt || '',
             onInput: e => updField('weatherCustomPrompt', e.target.value),
