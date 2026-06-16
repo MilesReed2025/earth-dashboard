@@ -1276,6 +1276,7 @@
     }
     .widget-logo img { width: 20px; height: 20px; border-radius: 3px; object-fit: contain; display: block; }
     .widget-name { font-size: .77rem; font-weight: 600; color: var(--t2); flex: 1; letter-spacing: -.01em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .widget-overlay { position: absolute; inset: 0; z-index: 1; border-radius: inherit; cursor: pointer; }
     .widget-url {
       position: absolute; top: 9px; right: 9px; z-index: 2;
       width: 26px; height: 26px; border-radius: 8px;
@@ -3426,7 +3427,12 @@ function ServiceWidget({ svc, live }) {
   const statusLbl = isLive ? 'Live' : isErr ? 'Down' : !backendAvailable ? 'Demo' : 'Connecting…';
 
   return h('div', { className: 'widget', style: { '--wc': svc.color || 'var(--a)' } },
-    // Header: logo + name + link
+    // Full-card link overlay (behind the open button)
+    svc.url && h('a', {
+      className: 'widget-overlay', href: svc.url, target: '_blank',
+      rel: 'noreferrer', 'aria-label': `Open ${svc.name}`,
+    }),
+    // Header: logo + name + open button
     h('div', { className: 'widget-hd' },
       h('div', { className: 'widget-logo' }, h(ServiceLogo, { logo: svc.logo })),
       h('span', { className: 'widget-name' }, svc.name),
@@ -5158,7 +5164,7 @@ function SettingsView({ cfg, setCfg, backend }) {
     { key: 'links',        icon: I.link,     label: 'Links'       },
     { key: 'status',       icon: I.check,    label: 'Status'      },
     { sep: true },
-    { key: 'automations',  icon: I.bolt,     label: 'Automations' },
+    { key: 'automations',  icon: I.bolt,     label: 'Home'        },
   ];
   const ADV_NAV = [
     { key: 'integrations', icon: I.plug,     label: 'Integrations'},
