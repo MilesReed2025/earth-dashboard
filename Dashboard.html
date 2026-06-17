@@ -927,7 +927,10 @@
     .day-uncfg { font-size: .7rem; color: var(--t4); display: flex; align-items: center; gap: 5px; }
 
     /* ── WEATHER PERSONALITY PICKER ─────────────────────────────────────── */
-    .wx-pers-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .wx-pers-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+    .wx-pers-group { display: flex; flex-direction: column; gap: 5px; }
+    .wx-pers-group-lbl { font-size: .62rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--t4); }
+    .wx-pers-row { display: flex; flex-wrap: wrap; gap: 6px; }
     .wx-pers-btn {
       padding: 4px 12px; border-radius: 20px; border: 1px solid var(--b2);
       background: var(--s1); color: var(--t3); font-size: .74rem; font-family: inherit;
@@ -2023,7 +2026,7 @@ if (window.EARTH_DEMO) {
     location: { name: 'London, UK', lat: 51.5074, lng: -0.1278 },
     theme: 'dark',
     onboarded: true,
-    weatherPersonality: 'sarcastic',
+    weatherPersonality: 'motorcyclist',
     workMode: false,
     workStart: '09:00',
     workEnd: '18:00',
@@ -2528,7 +2531,7 @@ function parseYouTubeItems(xml) {
 }
 
 async function fetchForecast7Day(lat, lng) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max&timezone=auto&forecast_days=7`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,windspeed_10m_max,windgusts_10m_max&timezone=auto&forecast_days=7`;
   const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
   if (!res.ok) throw new Error('forecast failed');
   return res.json();
@@ -2559,18 +2562,42 @@ async function generateForecastNarrative(forecastData, locationName, personality
   const days = forecastData.daily.time.map((date, i) => {
     const d = new Date(date);
     const name = d.toLocaleDateString('en-GB', { weekday: 'long' });
-    return `${name}: ${WX_CODES[forecastData.daily.weathercode[i]] || 'Variable'}, ${Math.round(forecastData.daily.temperature_2m_min[i])}–${Math.round(forecastData.daily.temperature_2m_max[i])}°C, rain ${(forecastData.daily.precipitation_sum[i] || 0).toFixed(1)}mm, wind up to ${Math.round(forecastData.daily.windspeed_10m_max[i])} mph`;
+    const gusts = forecastData.daily.windgusts_10m_max?.[i];
+    const precipProb = forecastData.daily.precipitation_probability_max?.[i];
+    return `${name}: ${WX_CODES[forecastData.daily.weathercode[i]] || 'Variable'}, ${Math.round(forecastData.daily.temperature_2m_min[i])}–${Math.round(forecastData.daily.temperature_2m_max[i])}°C, rain ${(forecastData.daily.precipitation_sum[i] || 0).toFixed(1)}mm${precipProb != null ? ` (${precipProb}% chance)` : ''}, wind ${Math.round(forecastData.daily.windspeed_10m_max[i])} mph${gusts != null ? ` gusts ${Math.round(gusts)} mph` : ''}`;
   }).join('\n');
 
-  const p = personality || 'sarcastic';
+  const p = personality || 'motorcyclist';
   const provider = aiProvider || 'mistral';
 
   const PROMPTS = {
-    normal:
-      `Write a clear, practical 7-day weather forecast for ${locationName}. One sentence per day. ` +
-      `Cover temperature range, precipitation, and notable conditions. Suggest clothing or activity adjustments where useful. ` +
-      `Write in plain prose — no bullet points, no markdown, one line per day, under 190 words.`,
+    // ── Practical ───────────────────────────────────────────────────────────
+    motorcyclist:
+      `You are an experienced motorcyclist giving a frank daily riding assessment for ${locationName}. ` +
+      `For each day open with a clear verdict — GO, CAUTION, or AVOID — then give one sentence of reasoning. ` +
+      `Prioritise: wind gusts (above 40 mph is dangerous), rain and wet roads (reduced grip, visibility), ` +
+      `temperature (below 5°C risks ice, 5–10°C means full winter gear), fog, and storm codes. ` +
+      `Be direct and specific — mention the actual numbers that matter. No filler, no chattiness. ` +
+      `Format exactly as: Day: [GO / CAUTION / AVOID] — reason. Plain text, one line per day, under 190 words.`,
 
+    runner:
+      `You are a running coach giving a practical daily training assessment for ${locationName}. ` +
+      `For each day open with a clear verdict — GOOD, MANAGEABLE, or TOUGH — then give one sentence of advice. ` +
+      `Prioritise: temperature (ideal 8–16°C; above 22°C heat stress, below 2°C icy paths), ` +
+      `rain (under 3mm is fine, higher disrupts), wind (above 25 mph adds real effort), ` +
+      `and precipitation probability. Suggest morning/evening adjustments if relevant. ` +
+      `Format exactly as: Day: [GOOD / MANAGEABLE / TOUGH] — reason. Plain text, one line per day, under 190 words.`,
+
+    cyclist:
+      `You are an experienced road cyclist giving a practical daily riding assessment for ${locationName}. ` +
+      `For each day open with a clear verdict — GREAT, ACCEPTABLE, or AVOID — then give one sentence of reasoning. ` +
+      `Prioritise: wind and gusts (above 30 mph seriously affects effort and safety; note it as a challenge), ` +
+      `rain and wet roads (braking distance, slippery paint and drains), ` +
+      `temperature (below 5°C ice risk on roads), and precipitation probability. ` +
+      `Be specific about the numbers — cyclists care about exact wind speeds. ` +
+      `Format exactly as: Day: [GREAT / ACCEPTABLE / AVOID] — reason. Plain text, one line per day, under 190 words.`,
+
+    // ── Fun ─────────────────────────────────────────────────────────────────
     sarcastic:
       `You are a veteran weather presenter who has watched ${locationName} disappoint everyone for thirty years. ` +
       `Write a 7-day forecast — dry, sardonic, quietly exhausted. Rain arrives with resigned inevitability. ` +
@@ -2580,9 +2607,9 @@ async function generateForecastNarrative(forecastData, locationName, personality
 
     rude:
       `You are a weather forecaster who is openly furious about the weather and furious at anyone asking about it. ` +
-      `Write a 7-day forecast for ${locationName} — genuinely rude, contemptuous, and zero patience. ` +
-      `Rain is "obviously it's going to rain, it always rains." Sunshine is "don't get used to it." Cold is "your own fault for living here." ` +
-      `Use short, clipped sentences. Express real irritation. Still technically informative but delivered with obvious disdain. ` +
+      `Write a 7-day forecast for ${locationName} — genuinely rude, contemptuous, zero patience. ` +
+      `Rain is "obviously it's going to rain, it always rains." Sunshine is "don't get used to it." ` +
+      `Short, clipped sentences. Still technically informative but delivered with obvious disdain. ` +
       `Plain text, one line per day, under 190 words.`,
 
     cheerful:
@@ -2594,17 +2621,17 @@ async function generateForecastNarrative(forecastData, locationName, personality
 
     depressed:
       `You are a weather forecaster in the grip of a quiet existential crisis. ` +
-      `Write a 7-day forecast for ${locationName} with a melancholic, introspective tone — the weather feels like a metaphor. ` +
+      `Write a 7-day forecast for ${locationName} — melancholic, introspective, the weather feels like a metaphor. ` +
       `Even a clear day carries a hint of something ending. Rain is rain but also everything else. ` +
-      `Keep it poetic and still informative. No wallowing, just wistfulness. ` +
-      `Plain text, one line per day, under 190 words.`,
+      `Poetic but still informative. No wallowing, just wistfulness. Plain text, one line per day, under 190 words.`,
 
+    // ── Custom ───────────────────────────────────────────────────────────────
     custom: customPrompt
       ? `${customPrompt.trim()}\n\nLocation: ${locationName}. Plain text only, no markdown, one line per day, under 190 words.`
       : null,
   };
 
-  const systemPrompt = PROMPTS[p] ?? PROMPTS.sarcastic;
+  const systemPrompt = PROMPTS[p] ?? PROMPTS.motorcyclist;
   if (!systemPrompt) throw new Error('Custom prompt is empty — add one in Settings → General.');
 
   const model = AI_DEFAULT_MODELS[provider] || AI_DEFAULT_MODELS.mistral;
@@ -5302,23 +5329,51 @@ function SettingsView({ cfg, setCfg, backend }) {
         ),
 
         h('div', { className: 'set-f' },
-          h('label', { className: 'set-l' }, 'Forecast personality'),
+          h('label', { className: 'set-l' }, 'Forecast style'),
           h('div', { className: 'wx-pers-btns' },
-            ...[
-              { key: 'normal',    label: 'Normal' },
-              { key: 'sarcastic', label: 'Sarcastic' },
-              { key: 'rude',      label: 'Actually Rude' },
-              { key: 'cheerful',  label: 'Cheerful' },
-              { key: 'depressed', label: 'Depressed' },
-              { key: 'custom',    label: 'Custom' },
-            ].map(({ key, label }) =>
-              h('button', {
-                key,
-                type: 'button',
-                className: 'wx-pers-btn' + ((cfg.weatherPersonality || 'sarcastic') === key ? ' active' : ''),
-                onClick: () => updField('weatherPersonality', key),
-              }, label)
-            )
+            // Practical group
+            h('div', { className: 'wx-pers-group' },
+              h('span', { className: 'wx-pers-group-lbl' }, 'Practical advice'),
+              h('div', { className: 'wx-pers-row' },
+                ...[
+                  { key: 'motorcyclist', label: '🏍  Motorcyclist' },
+                  { key: 'cyclist',      label: '🚴  Cyclist'      },
+                  { key: 'runner',       label: '🏃  Runner'       },
+                ].map(({ key, label }) =>
+                  h('button', { key, type: 'button',
+                    className: 'wx-pers-btn' + ((cfg.weatherPersonality || 'motorcyclist') === key ? ' active' : ''),
+                    onClick: () => updField('weatherPersonality', key),
+                  }, label)
+                )
+              ),
+            ),
+            // Fun group
+            h('div', { className: 'wx-pers-group' },
+              h('span', { className: 'wx-pers-group-lbl' }, 'Just for fun'),
+              h('div', { className: 'wx-pers-row' },
+                ...[
+                  { key: 'sarcastic', label: 'Sarcastic'    },
+                  { key: 'rude',      label: 'Actually Rude' },
+                  { key: 'cheerful',  label: 'Cheerful'     },
+                  { key: 'depressed', label: 'Melancholic'  },
+                ].map(({ key, label }) =>
+                  h('button', { key, type: 'button',
+                    className: 'wx-pers-btn' + ((cfg.weatherPersonality || 'motorcyclist') === key ? ' active' : ''),
+                    onClick: () => updField('weatherPersonality', key),
+                  }, label)
+                )
+              ),
+            ),
+            // Custom
+            h('div', { className: 'wx-pers-group' },
+              h('span', { className: 'wx-pers-group-lbl' }, 'Custom'),
+              h('div', { className: 'wx-pers-row' },
+                h('button', { key: 'custom', type: 'button',
+                  className: 'wx-pers-btn' + ((cfg.weatherPersonality || 'motorcyclist') === 'custom' ? ' active' : ''),
+                  onClick: () => updField('weatherPersonality', 'custom'),
+                }, 'Custom prompt…')
+              ),
+            ),
           ),
           (cfg.weatherPersonality === 'custom') && h('textarea', {
             className: 'set-i',
