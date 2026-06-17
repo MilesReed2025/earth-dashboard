@@ -1760,6 +1760,10 @@
     .set-nav-item.on { background: var(--a-lo); color: var(--a); }
     .set-nav-sep { height: 1px; background: var(--b); margin: 6px 12px; }
     .set-main { flex: 1; padding: 22px 26px; overflow-y: auto; min-width: 0; }
+    .set-side-footer { margin-top: auto; padding: 10px 6px 0; border-top: 1px solid var(--b); }
+    .set-adv-btn { display: flex; align-items: center; gap: 7px; width: calc(100% - 0px); padding: 7px 14px; margin: 0; border-radius: 7px; background: none; border: none; cursor: pointer; color: var(--t4); font-size: .73rem; font-weight: 500; font-family: inherit; text-align: left; transition: background .12s, color .12s; }
+    .set-adv-btn:hover { background: var(--s2); color: var(--t3); }
+    .set-adv-btn.on { background: var(--a-lo); color: var(--a); }
 
     /* Legacy tab pills — kept for inner sub-tabs only */
     .set-tabs { display: flex; gap: 4px; margin-bottom: 22px; flex-wrap: wrap; }
@@ -5271,16 +5275,19 @@ function SettingsView({ cfg, setCfg, backend }) {
             onClick: () => setTab('config'),
           }, h(Icon, { d: I.code, size: 15 }), 'Config'),
         ),
+        h('div', { className: 'set-side-footer' },
+          h('button', {
+            type: 'button',
+            className: 'set-adv-btn' + (advancedMode ? ' on' : ''),
+            onClick: toggleAdvanced,
+          },
+            h(Icon, { d: I.settings, size: 13 }),
+            advancedMode ? 'Advanced on' : 'Advanced',
+          ),
+        ),
       ),
       // ── Main content ─────────────────────────────────────────────
       h('div', { className: 'set-main' },
-        h('div', { style: { display: 'flex', justifyContent: 'flex-end', marginBottom: 2 } },
-          h('button', {
-            type: 'button',
-            onClick: toggleAdvanced,
-            style: { fontSize: '.64rem', color: advancedMode ? 'var(--a)' : 'var(--t4)', background: advancedMode ? 'var(--a-lo)' : 'none', border: '1px solid ' + (advancedMode ? 'color-mix(in oklch, var(--a) 30%, transparent)' : 'var(--b)'), borderRadius: 6, cursor: 'pointer', padding: '3px 9px', fontFamily: 'inherit', fontWeight: 500, letterSpacing: '.02em' },
-          }, advancedMode ? '⚙ Advanced on' : '⚙ Advanced'),
-        ),
 
     tab === 'config' && h(ConfigTab, { backend }),
 
@@ -5288,9 +5295,15 @@ function SettingsView({ cfg, setCfg, backend }) {
     tab === 'general' && h('div', null,
       h('div', { className: 'set-g' },
         h('div', { className: 'set-gtitle' }, 'Display'),
-        h('div', { className: 'set-f' },
-          h('label', { className: 'set-l' }, 'Your name'),
-          h('input', { className: 'set-i', value: cfg.name, onChange: e => updField('name', e.target.value) })
+        h('div', { className: 'set-2', style: { marginBottom: 12 } },
+          h('div', { className: 'set-f', style: { marginBottom: 0 } },
+            h('label', { className: 'set-l' }, 'App name'),
+            h('input', { className: 'set-i', value: cfg.appName || '', onChange: e => updField('appName', e.target.value), placeholder: 'EARTH' }),
+          ),
+          h('div', { className: 'set-f', style: { marginBottom: 0 } },
+            h('label', { className: 'set-l' }, 'Your name'),
+            h('input', { className: 'set-i', value: cfg.name, onChange: e => updField('name', e.target.value) }),
+          ),
         ),
         h('div', { className: 'set-f' },
           h('label', { className: 'set-l' }, 'Theme'),
@@ -8260,6 +8273,10 @@ function App() {
     const hidden = cfg.layout?.hiddenNav || [];
     if (hidden.includes(view)) setView('home');
   }, [cfg.layout?.hiddenNav]);
+  // Sync document.title to app name
+  React.useEffect(() => {
+    document.title = cfg.appName ? cfg.appName.toUpperCase() : 'Earth';
+  }, [cfg.appName]);
   const [now, setNow] = useState(new Date());
   const [mode, setMode] = useState(() => getAutoMode(loadCfg()) || 'personal');
   const [backend, setBackend] = useState(false);
@@ -8367,7 +8384,7 @@ function App() {
     h('nav', { className: 'sidebar' },
       h('div', { className: 'brand' },
         h('div', { className: 'brand-mark' }, h(EarthIcon)),
-        h('span', { className: 'brand-name' }, 'EARTH')
+        h('span', { className: 'brand-name' }, (cfg.appName || 'EARTH').toUpperCase())
       ),
       h('div', { className: 'ni' + (view === 'home' ? ' on' : ''), onClick: () => setView('home'), 'data-label': 'Home' },
         h(Icon, { d: I.home }), h('span', { className: 'ni-lbl' }, 'Home')
