@@ -4652,6 +4652,7 @@ function YTEditForm({ ch, onSave, onCancel }) {
   const [searchErr, setSearchErr] = useState(null);
   const [manualName, setManualName] = useState(ch.name || '');
   const [manualId, setManualId]     = useState(ch.channelId || '');
+  const [workMode, setWorkMode]     = useState(ch.mode || 'both');
 
   const suggest = async () => {
     const kw = keywords.trim();
@@ -4689,11 +4690,11 @@ function YTEditForm({ ch, onSave, onCancel }) {
       const id = manualId.trim();
       const nm = manualName.trim() || id;
       if (!id) return;
-      if (isNew) onSave([{ name: nm, channelId: id }]);
-      else onSave({ ...d, name: nm, channelId: id });
+      if (isNew) onSave([{ name: nm, channelId: id, mode: workMode }]);
+      else onSave({ ...d, name: nm, channelId: id, mode: workMode });
     } else {
-      if (isNew) onSave(suggestions.filter(s => selected.has(s.channelId)));
-      else onSave(d);
+      if (isNew) onSave(suggestions.filter(s => selected.has(s.channelId)).map(s => ({ ...s, mode: workMode })));
+      else onSave({ ...d, mode: workMode });
     }
   };
 
@@ -4797,10 +4798,13 @@ function YTEditForm({ ch, onSave, onCancel }) {
       ),
     ),
 
-    // Save / cancel
-    h('div', { style: { display: 'flex', gap: 8, marginTop: 8 } },
-      h('button', { type: 'button', className: 'btn btn-s', onClick: handleSave, disabled: !canSave }, 'Save'),
-      h('button', { type: 'button', className: 'btn btn-s ghost', onClick: onCancel }, 'Cancel'),
+    // Mode picker + Save / cancel
+    h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 8 } },
+      h(ModePicker, { value: workMode, onChange: setWorkMode }),
+      h('div', { style: { display: 'flex', gap: 8 } },
+        h('button', { type: 'button', className: 'btn btn-s', onClick: handleSave, disabled: !canSave }, 'Save'),
+        h('button', { type: 'button', className: 'btn btn-s ghost', onClick: onCancel }, 'Cancel'),
+      ),
     ),
   );
 }
