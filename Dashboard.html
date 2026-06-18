@@ -686,11 +686,11 @@
     /* ── MODE TOGGLE ─────────────────────────────────────── */
     .mode-toggle { display: flex; margin: 0 8px 4px; }
     .frame.col .mode-toggle { margin: 0 4px 4px; justify-content: center; }
-    .mode-pill { display: flex; flex-direction: column; background: var(--s1); border-radius: 10px; padding: 3px; gap: 2px; border: 1px solid var(--b); width: 100%; }
-    .frame.col .mode-pill { width: auto; }
-    .mode-btn { flex: none; height: 34px; min-width: 0; border-radius: 8px; border: none; background: transparent; display: flex; align-items: center; justify-content: flex-start; gap: 8px; color: var(--t4); cursor: pointer; transition: background .2s cubic-bezier(.4,0,.2,1), color .15s; position: relative; padding: 0 11px; overflow: hidden; font-family: inherit; }
+    .mode-pill { display: flex; flex-direction: row; background: var(--s1); border-radius: 10px; padding: 3px; gap: 2px; border: 1px solid var(--b); width: 100%; }
+    .frame.col .mode-pill { flex-direction: column; width: auto; }
+    .mode-btn { flex: 1; min-width: 0; border-radius: 8px; border: none; background: transparent; display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--t4); cursor: pointer; transition: background .2s cubic-bezier(.4,0,.2,1), color .15s; position: relative; padding: 6px 8px; overflow: hidden; font-family: inherit; }
     .mode-btn.on { background: var(--a-lo); color: var(--a); box-shadow: 0 1px 4px oklch(0% 0 0 / .13); }
-    .frame.col .mode-btn { width: 36px; padding: 0; justify-content: center; gap: 0; }
+    .frame.col .mode-btn { flex: none; width: 36px; height: 34px; padding: 0; justify-content: center; gap: 0; }
     .mode-btn-lbl { font-size: .73rem; font-weight: 500; letter-spacing: .01em; white-space: nowrap; pointer-events: none; }
     .mode-btn.on .mode-btn-lbl { font-weight: 600; }
     .frame.col .mode-btn-lbl { display: none; }
