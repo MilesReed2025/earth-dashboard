@@ -434,6 +434,22 @@
     .ew-lock-btn:hover { background: var(--s2); }
     .ew-lock-btn.locked { background: var(--a-lo); border-color: var(--a); color: var(--a); }
 
+    /* Alarm panel */
+    .ew-alarm-modes { display: flex; flex-wrap: wrap; gap: 4px; }
+    .ew-alarm-mode-btn { background: var(--s1); border: 1px solid var(--b); border-radius: 7px; padding: 5px 8px; cursor: pointer; font-size: .68rem; color: var(--t2); font-family: inherit; transition: background .1s; }
+    .ew-alarm-mode-btn:hover { background: var(--s2); }
+    .ew-alarm-code-input { width: 100%; }
+
+    /* Timer */
+    .ew-timer-remaining { font-size: 1.4rem; font-weight: 300; color: var(--t1); line-height: 1.1; }
+
+    /* Select */
+    .ew-select { width: 100%; background: var(--s1); border: 1px solid var(--b); border-radius: 7px; padding: 6px 8px; font-size: .78rem; color: var(--t2); font-family: inherit; cursor: pointer; }
+
+    /* Update */
+    .ew-update-versions { font-size: .7rem; color: var(--t3); }
+    .ew-update-versions b { color: var(--t1); font-weight: 500; }
+
     /* ── Calendar modal ── */
     .cal-overlay { position: fixed; inset: 0; background: oklch(0% 0 0 / .6); z-index: 8500; display: flex; align-items: center; justify-content: center; padding: 24px; animation: fadeIn .18s ease-out; backdrop-filter: blur(4px); }
     .cal-modal { background: var(--frame); border: 1px solid var(--b2); border-radius: 22px; width: 100%; max-width: 960px; height: min(760px, calc(100vh - 48px)); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 32px 80px oklch(0% 0 0 / .45); }
@@ -7211,6 +7227,222 @@ function LockWidget({ entity }) {
   );
 }
 
+// ── Vacuum widget ─────────────────────────────────────────────────────────────
+function VacuumWidget({ entity }) {
+  const state   = entity.state; // cleaning, docked, paused, returning, idle, error
+  const battery = entity.attributes?.battery_level;
+  const call    = svc => haCallService('vacuum', svc, entity.entity_id);
+  return h('div', { className: 'ew-body ew-cover-body' },
+    h('div', { className: 'ew-cover-btns' },
+      h('button', { type:'button', className:'ew-cover-btn', onClick: () => call(state === 'cleaning' ? 'pause' : 'start'), title:'Start/Pause' }, state === 'cleaning' ? '⏸ Pause' : '▶ Start'),
+      h('button', { type:'button', className:'ew-cover-btn', onClick: () => call('stop'), title:'Stop' }, '⏹ Stop'),
+      h('button', { type:'button', className:'ew-cover-btn', onClick: () => call('return_to_base'), title:'Dock' }, '⌂ Dock'),
+    ),
+    h('span', { className: 'ew-state-label' }, battery != null ? `${state} · ${battery}%` : state),
+  );
+}
+
+// ── Humidifier widget ────────────────────────────────────────────────────────
+function HumidifierWidget({ entity }) {
+  const [optimistic, setOptimistic] = useState(null);
+  const attrs   = entity.attributes || {};
+  const isOn    = optimistic !== null ? optimistic : entity.state === 'on';
+  const avail   = entity.state !== 'unavailable';
+  const target  = attrs.humidity;
+  const min     = attrs.min_humidity ?? 0;
+  const max     = attrs.max_humidity ?? 100;
+
+  useEffect(() => { setOptimistic(null); }, [entity.state]);
+
+  const toggle = () => {
+    if (!avail) return;
+    const next = !isOn;
+    setOptimistic(next);
+    haCallService('humidifier', next ? 'turn_on' : 'turn_off', entity.entity_id)
+      .then(res => { if (res?.error) setOptimistic(null); })
+      .catch(() => setOptimistic(null));
+  };
+  const setHumidity = v => haCallService('humidifier', 'set_humidity', entity.entity_id, { humidity: v });
+
+  return h('div', { className: 'ew-body' },
+    h('div', { className: 'ew-toggle-row' },
+      h('button', {
+        type: 'button', className: 'ew-toggle' + (isOn ? ' on' : ''),
+        onClick: avail ? toggle : undefined, disabled: !avail,
+      }, h('div', { className: 'ew-toggle-thumb' })),
+      h('span', { className: 'ew-state-label' }, avail ? (isOn ? (target != null ? `${target}%` : 'On') : 'Off') : 'Unavailable'),
+    ),
+    isOn && target != null && h('input', {
+      type: 'range', min, max, value: target,
+      className: 'ew-slider',
+      onChange: e => setHumidity(Number(e.target.value)),
+    }),
+  );
+}
+
+// ── Water heater widget ──────────────────────────────────────────────────────
+function WaterHeaterWidget({ entity }) {
+  const current = entity.attributes?.current_temperature;
+  const target  = entity.attributes?.temperature;
+  const mode    = entity.state; // eco, gas, heat_pump, off, etc.
+  const unit    = entity.attributes?.temperature_unit || '°';
+
+  const setTemp = delta => {
+    if (target == null) return;
+    haCallService('water_heater', 'set_temperature', entity.entity_id, { temperature: Math.round((target + delta) * 2) / 2 });
+  };
+
+  return h('div', { className: 'ew-body ew-climate-body' },
+    h('div', { className: 'ew-climate-temps' },
+      h('div', { className: 'ew-climate-current' },
+        current != null ? `${current}${unit}` : '—',
+        h('span', { className: 'ew-climate-label' }, 'current'),
+      ),
+      target != null && h('div', { className: 'ew-climate-target' },
+        h('button', { type:'button', className:'ew-temp-btn', onClick: () => setTemp(-0.5) }, '−'),
+        h('span', { className: 'ew-climate-setpoint' }, `${target}${unit}`),
+        h('button', { type:'button', className:'ew-temp-btn', onClick: () => setTemp(0.5) }, '+'),
+        h('span', { className: 'ew-climate-label' }, 'set'),
+      ),
+    ),
+    h('span', { className: 'ew-climate-mode', style: { color: mode === 'off' ? 'var(--t4)' : 'var(--a)' } }, mode),
+  );
+}
+
+// ── Alarm control panel widget ───────────────────────────────────────────────
+function AlarmControlPanelWidget({ entity }) {
+  const [code, setCode] = useState('');
+  const state = entity.state; // disarmed, armed_home, armed_away, armed_night, pending, triggered
+  const needsCode = !!entity.attributes?.code_format;
+  const call = (svc) => haCallService('alarm_control_panel', svc, entity.entity_id, needsCode && code ? { code } : undefined);
+  const modes = [
+    { label: 'Disarm',    svc: 'alarm_disarm' },
+    { label: 'Arm Home',  svc: 'alarm_arm_home' },
+    { label: 'Arm Away',  svc: 'alarm_arm_away' },
+    { label: 'Arm Night', svc: 'alarm_arm_night' },
+  ];
+  return h('div', { className: 'ew-body' },
+    h('span', { className: 'ew-state-label' }, state.replace(/_/g, ' ')),
+    needsCode && h('input', {
+      type: 'tel', className: 'set-i ew-alarm-code-input', placeholder: 'Code',
+      value: code, onChange: e => setCode(e.target.value),
+    }),
+    h('div', { className: 'ew-alarm-modes' },
+      modes.map(m => h('button', {
+        key: m.svc, type: 'button', className: 'ew-alarm-mode-btn',
+        onClick: () => call(m.svc),
+      }, m.label)),
+    ),
+  );
+}
+
+// ── Timer widget ──────────────────────────────────────────────────────────────
+function TimerWidget({ entity }) {
+  const [now, setNow] = useState(Date.now());
+  const state  = entity.state; // active, paused, idle
+  const finishesAt = entity.attributes?.finishes_at;
+  const call = svc => haCallService('timer', svc, entity.entity_id);
+
+  useEffect(() => {
+    if (state !== 'active') return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [state]);
+
+  const remaining = (() => {
+    if (state === 'active' && finishesAt) {
+      const ms = Math.max(0, new Date(finishesAt).getTime() - now);
+      const s  = Math.floor(ms / 1000);
+      return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+    }
+    return entity.attributes?.remaining || '—';
+  })();
+
+  return h('div', { className: 'ew-body' },
+    h('div', { className: 'ew-timer-remaining' }, remaining),
+    h('div', { className: 'ew-cover-btns' },
+      h('button', { type:'button', className:'ew-cover-btn', onClick: () => call(state === 'active' ? 'pause' : 'start') }, state === 'active' ? '⏸ Pause' : '▶ Start'),
+      h('button', { type:'button', className:'ew-cover-btn', onClick: () => call('cancel') }, '✕ Cancel'),
+    ),
+  );
+}
+
+// ── Button widget ─────────────────────────────────────────────────────────────
+function ButtonWidget({ entity }) {
+  const [pressed, setPressed] = useState(false);
+  const domain = entity.entity_id.split('.')[0];
+  const press = () => {
+    if (pressed) return;
+    setPressed(true);
+    haCallService(domain, 'press', entity.entity_id)
+      .finally(() => setTimeout(() => setPressed(false), 1200));
+  };
+  return h('div', { className: 'ew-body ew-toggle-body' },
+    h('button', {
+      type: 'button',
+      className: 'ew-script-btn' + (pressed ? ' running' : ''),
+      onClick: press,
+      disabled: pressed,
+    }, pressed ? 'Pressed' : 'Press'),
+  );
+}
+
+// ── Select widget (select, input_select) ────────────────────────────────────
+function SelectWidget({ entity }) {
+  const domain  = entity.entity_id.split('.')[0];
+  const options = entity.attributes?.options || [];
+  const value   = entity.state;
+  const setOption = v => haCallService(domain, 'select_option', entity.entity_id, { option: v });
+  return h('div', { className: 'ew-body' },
+    h('select', {
+      className: 'ew-select', value,
+      onChange: e => setOption(e.target.value),
+    },
+      !options.includes(value) && h('option', { value }, value),
+      options.map(o => h('option', { key: o, value: o }, o)),
+    ),
+  );
+}
+
+// ── Valve widget ──────────────────────────────────────────────────────────────
+function ValveWidget({ entity }) {
+  const state = entity.state; // open, closed, opening, closing
+  const pos   = entity.attributes?.current_position;
+  const call  = svc => haCallService('valve', svc, entity.entity_id);
+  return h('div', { className: 'ew-body ew-cover-body' },
+    h('div', { className: 'ew-cover-btns' },
+      h('button', { type:'button', className:'ew-cover-btn', onClick: () => call('open_valve'),  title:'Open'  }, '↑ Open'),
+      h('button', { type:'button', className:'ew-cover-btn', onClick: () => call('stop_valve'),  title:'Stop'  }, '⏸ Stop'),
+      h('button', { type:'button', className:'ew-cover-btn', onClick: () => call('close_valve'), title:'Close' }, '↓ Close'),
+    ),
+    h('span', { className: 'ew-state-label' }, pos != null ? `${pos}%` : state),
+  );
+}
+
+// ── Update widget ─────────────────────────────────────────────────────────────
+function UpdateWidget({ entity }) {
+  const attrs      = entity.attributes || {};
+  const updateAvail = entity.state === 'on';
+  const [installing, setInstalling] = useState(false);
+  const install = () => {
+    setInstalling(true);
+    haCallService('update', 'install', entity.entity_id)
+      .finally(() => setTimeout(() => setInstalling(false), 2000));
+  };
+  return h('div', { className: 'ew-body' },
+    h('div', { className: 'ew-update-versions' },
+      h('b', null, attrs.installed_version || '—'),
+      updateAvail && attrs.latest_version ? ` → ${attrs.latest_version}` : '',
+    ),
+    updateAvail && h('button', {
+      type: 'button',
+      className: 'ew-script-btn' + (installing ? ' running' : ''),
+      onClick: install,
+      disabled: installing,
+    }, installing ? 'Installing…' : 'Install update'),
+  );
+}
+
 // ── Script widget ─────────────────────────────────────────────────────────────
 function ScriptWidget({ entity }) {
   const [running, setRunning] = useState(false);
@@ -7296,6 +7528,18 @@ function EntityWidget({ entityId, name, state }) {
       case 'number':          return h(NumberWidget,  { entity: state });
       case 'lock':            return h(LockWidget,    { entity: state });
       case 'camera':          return h(CameraWidget,  { entity: state });
+      case 'vacuum':          return h(VacuumWidget,  { entity: state });
+      case 'humidifier':      return h(HumidifierWidget, { entity: state });
+      case 'water_heater':    return h(WaterHeaterWidget, { entity: state });
+      case 'alarm_control_panel': return h(AlarmControlPanelWidget, { entity: state });
+      case 'timer':           return h(TimerWidget,   { entity: state });
+      case 'button':
+      case 'input_button':    return h(ButtonWidget,  { entity: state });
+      case 'select':
+      case 'input_select':    return h(SelectWidget,  { entity: state });
+      case 'siren':           return h(ToggleWidget,  { entity: state, name: label });
+      case 'valve':           return h(ValveWidget,   { entity: state });
+      case 'update':          return h(UpdateWidget,  { entity: state });
       case 'sensor':
       case 'binary_sensor':
       case 'weather':
