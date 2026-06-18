@@ -703,7 +703,7 @@ function fmtSI(n) {
   const lfmGet  = (method, extra = {}) =>
     http.json(LASTFM, { params: { method, api_key: process.env.LASTFM_KEY, format: "json", ...extra } });
   const noKey   = (c) =>
-    c.json({ error: "LASTFM_KEY not configured — add it in Settings → Discover", results: [] }, 503);
+    c.json({ error: "LASTFM_KEY not configured — add it in Settings → Integrations", results: [] }, 503);
 
   const lfmRoute = async (c, cacheKey, ttl, fn) => {
     if (!process.env.LASTFM_KEY) return noKey(c);
@@ -1005,26 +1005,6 @@ app.post("/api/set-github-creds", async (c) => {
   set("GITHUB_TOKEN", token); set("GITHUB_USER", username);
   fs.writeFileSync(envPath, content, "utf8");
   process.env.GITHUB_TOKEN = token; process.env.GITHUB_USER = username;
-  return c.json({ ok: true });
-});
-
-/* ── LAST.FM ─────────────────────────────────────────────────────────────── */
-app.get("/api/lastfm-status", (c) => c.json({ configured: !!(process.env.LASTFM_KEY && process.env.LASTFM_USER) }));
-app.post("/api/set-lastfm-creds", async (c) => {
-  const body = await c.req.json().catch(() => ({}));
-  const apiKey   = (body.apiKey   || "").trim();
-  const username = (body.username || "").trim();
-  if (!apiKey || !username) return c.json({ error: "apiKey and username required" }, 400);
-  const envPath = join(here, ".env");
-  let content = "";
-  try { content = fs.readFileSync(envPath, "utf8"); } catch {}
-  const set = (k, v) => {
-    if (new RegExp(`^${k}\\s*=`, "m").test(content)) content = content.replace(new RegExp(`^${k}\\s*=.*`, "m"), `${k}=${v}`);
-    else content += (content.endsWith("\n") || !content ? "" : "\n") + `${k}=${v}\n`;
-  };
-  set("LASTFM_KEY", apiKey); set("LASTFM_USER", username);
-  fs.writeFileSync(envPath, content, "utf8");
-  process.env.LASTFM_KEY = apiKey; process.env.LASTFM_USER = username;
   return c.json({ ok: true });
 });
 

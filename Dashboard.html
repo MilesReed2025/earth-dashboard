@@ -1765,10 +1765,6 @@
     .set-nav-item.on { background: var(--a-lo); color: var(--a); }
     .set-nav-sep { height: 1px; background: var(--b); margin: 6px 12px; }
     .set-main { flex: 1; padding: 22px 26px; overflow-y: auto; min-width: 0; }
-    .set-side-footer { margin-top: auto; padding: 10px 6px 0; border-top: 1px solid var(--b); }
-    .set-adv-btn { display: flex; align-items: center; gap: 7px; width: calc(100% - 0px); padding: 7px 14px; margin: 0; border-radius: 7px; background: none; border: none; cursor: pointer; color: var(--t4); font-size: .73rem; font-weight: 500; font-family: inherit; text-align: left; transition: background .12s, color .12s; }
-    .set-adv-btn:hover { background: var(--s2); color: var(--t3); }
-    .set-adv-btn.on { background: var(--a-lo); color: var(--a); }
 
     /* Legacy tab pills — kept for inner sub-tabs only */
     .set-tabs { display: flex; gap: 4px; margin-bottom: 22px; flex-wrap: wrap; }
@@ -5232,33 +5228,25 @@ function SettingsView({ cfg, setCfg, backend }) {
 
   const updHA = (k, v) => save({ ...cfg, ha: { ...(cfg.ha || {}), [k]: v } });
 
-  const TABS = ['general', 'services', 'links', 'feeds', 'status', 'automations', 'discover', 'integrations'];
-  const TAB_LABELS = { general: 'General', services: 'Services', links: 'Links', feeds: 'Feeds', status: 'Status', automations: 'Automations', discover: 'Discover', integrations: 'Integrations' };
-  const [advancedMode, setAdvancedMode] = React.useState(() => {
-    try { return localStorage.getItem('earth:advanced') === '1'; } catch { return false; }
-  });
-  const toggleAdvanced = () => setAdvancedMode(v => {
-    const next = !v;
-    try { localStorage.setItem('earth:advanced', next ? '1' : '0'); } catch {}
-    if (!next && tab === 'config') setTab('general');
-    return next;
-  });
+  const [wtab, setWtab] = useState('services');
+  const WTABS = [
+    { key: 'services', label: 'Services' },
+    { key: 'links',    label: 'Links'    },
+    { key: 'status',   label: 'Status'   },
+    { key: 'feeds',    label: 'Feeds'    },
+  ];
 
   const NAV = [
     { key: 'general',      icon: I.settings, label: 'General'     },
+    { key: 'weather',      icon: I.wx_cloud, label: 'Weather'     },
     { key: 'layout',       icon: I.grid,     label: 'Layout'      },
     { sep: true },
-    { key: 'feeds',        icon: I.rss,      label: 'Feeds'       },
+    { key: 'widgets',      icon: I.srvr,     label: 'Widgets'     },
     { key: 'discover',     icon: I.film,     label: 'Discover'    },
-    { sep: true },
-    { key: 'services',     icon: I.srvr,     label: 'Services'    },
-    { key: 'links',        icon: I.link,     label: 'Links'       },
-    { key: 'status',       icon: I.check,    label: 'Status'      },
-    { sep: true },
     { key: 'automations',  icon: I.bolt,     label: 'Home'        },
-  ];
-  const ADV_NAV = [
     { key: 'integrations', icon: I.plug,     label: 'Integrations'},
+    { sep: true },
+    { key: 'config',       icon: I.code,     label: 'Config'      },
   ];
 
   return h('div', { className: 'set' },
@@ -5278,32 +5266,6 @@ function SettingsView({ cfg, setCfg, backend }) {
                 h(Icon, { d: item.icon, size: 15 }),
                 item.label,
               )
-        ),
-        advancedMode && h(React.Fragment, null,
-          h('div', { className: 'set-nav-sep' }),
-          ...ADV_NAV.map(item =>
-            h('button', {
-              key: item.key,
-              type: 'button',
-              className: 'set-nav-item' + (tab === item.key ? ' on' : ''),
-              onClick: () => setTab(item.key),
-            }, h(Icon, { d: item.icon, size: 15 }), item.label)
-          ),
-          h('button', {
-            type: 'button',
-            className: 'set-nav-item' + (tab === 'config' ? ' on' : ''),
-            onClick: () => setTab('config'),
-          }, h(Icon, { d: I.code, size: 15 }), 'Config'),
-        ),
-        h('div', { className: 'set-side-footer' },
-          h('button', {
-            type: 'button',
-            className: 'set-adv-btn' + (advancedMode ? ' on' : ''),
-            onClick: toggleAdvanced,
-          },
-            h(Icon, { d: I.settings, size: 13 }),
-            advancedMode ? 'Advanced on' : 'Advanced',
-          ),
         ),
       ),
       // ── Main content ─────────────────────────────────────────────
@@ -5342,6 +5304,72 @@ function SettingsView({ cfg, setCfg, backend }) {
         ),
       ),
       h(LocationSearchField, { cfg, save }),
+      h('div', { className: 'set-g' },
+        h('div', { className: 'set-gtitle' }, 'Auto-switch mode'),
+        h('div', { className: 'as-toggle' },
+          h('div', { className: 'as-toggle-label' },
+            h('span', { className: 'as-toggle-title' }, 'Switch based on schedule'),
+            h('span', { className: 'as-toggle-sub' }, 'Work mode during hours, Personal outside'),
+          ),
+          h('label', { className: 'as-switch' },
+            h('input', { type: 'checkbox', checked: cfg.autoSwitch?.enabled || false,
+              onChange: e => updField('autoSwitch', { ...(cfg.autoSwitch || {}), enabled: e.target.checked }) }),
+            h('div', { className: 'as-track' }),
+            h('div', { className: 'as-thumb' }),
+          ),
+        ),
+        cfg.autoSwitch?.enabled && h('div', { className: 'as-hours' },
+          h('div', { className: 'as-hours-body' },
+            h('div', { className: 'as-time-row' },
+              h('span', { className: 'as-time-label' }, 'From'),
+              h('select', { className: 'as-time-sel', value: cfg.autoSwitch?.workStart ?? 8,
+                onChange: e => updField('autoSwitch', { ...(cfg.autoSwitch || {}), workStart: parseInt(e.target.value) }) },
+                ...Array.from({ length: 24 }, (_, i) => h('option', { key: i, value: i }, `${i.toString().padStart(2,'0')}:00`))
+              ),
+              h('span', { className: 'as-time-sep' }, '—'),
+              h('select', { className: 'as-time-sel', value: cfg.autoSwitch?.workEnd ?? 17,
+                onChange: e => updField('autoSwitch', { ...(cfg.autoSwitch || {}), workEnd: parseInt(e.target.value) }) },
+                ...Array.from({ length: 24 }, (_, i) => h('option', { key: i, value: i }, `${i.toString().padStart(2,'0')}:00`))
+              ),
+            ),
+            h('div', { className: 'as-days' },
+              ...[['M',1],['T',2],['W',3],['T',4],['F',5],['S',6],['S',0]].map(([label, d], idx) => {
+                const workDays = cfg.autoSwitch?.workDays || [1,2,3,4,5];
+                const on = workDays.includes(d);
+                return h('button', { type: 'button',
+                  key: `${label}${idx}`,
+                  className: 'as-day' + (on ? ' on' : ''),
+                  title: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d],
+                  onClick: () => {
+                    const updated = on ? workDays.filter(x => x !== d) : [...workDays, d].sort((a,b) => a-b);
+                    updField('autoSwitch', { ...(cfg.autoSwitch || {}), workDays: updated });
+                  }
+                }, label);
+              })
+            )
+          ),
+          h('div', { className: 'as-preview' },
+            (() => {
+              const days = cfg.autoSwitch?.workDays || [1,2,3,4,5];
+              const names = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+              const s = cfg.autoSwitch?.workStart ?? 8;
+              const e = cfg.autoSwitch?.workEnd ?? 17;
+              const now = new Date();
+              const currentlyWork = days.includes(now.getDay()) && (now.getHours() + now.getMinutes()/60) >= s && (now.getHours() + now.getMinutes()/60) < e;
+              return [
+                h('strong', { key: 'mode', style: { color: currentlyWork ? 'oklch(62% 0.16 55)' : 'oklch(60% 0.15 250)' } },
+                  currentlyWork ? '💼 Work' : '🏠 Personal'),
+                ` now · Work: ${days.map(d => names[d]).join(', ')} ${s.toString().padStart(2,'0')}:00–${e.toString().padStart(2,'0')}:00`,
+              ];
+            })()
+          )
+        )
+      ),
+      saved && h('div', { className: 'saved-ok' }, h(Icon, { d: I.check, size: 13 }), ' Saved')
+    ),
+
+    // WEATHER
+    tab === 'weather' && h('div', null,
       h('div', { className: 'set-g' },
         h('div', { className: 'set-gtitle' }, 'Weather'),
 
@@ -5424,72 +5452,22 @@ function SettingsView({ cfg, setCfg, backend }) {
             'Affects how the AI narrates the 7-day forecast. Requires an API key above.'),
         ),
       ),
-      h('div', { className: 'set-g' },
-        h('div', { className: 'set-gtitle' }, 'Auto-switch mode'),
-        h('div', { className: 'as-toggle' },
-          h('div', { className: 'as-toggle-label' },
-            h('span', { className: 'as-toggle-title' }, 'Switch based on schedule'),
-            h('span', { className: 'as-toggle-sub' }, 'Work mode during hours, Personal outside'),
-          ),
-          h('label', { className: 'as-switch' },
-            h('input', { type: 'checkbox', checked: cfg.autoSwitch?.enabled || false,
-              onChange: e => updField('autoSwitch', { ...(cfg.autoSwitch || {}), enabled: e.target.checked }) }),
-            h('div', { className: 'as-track' }),
-            h('div', { className: 'as-thumb' }),
-          ),
-        ),
-        cfg.autoSwitch?.enabled && h('div', { className: 'as-hours' },
-          h('div', { className: 'as-hours-body' },
-            h('div', { className: 'as-time-row' },
-              h('span', { className: 'as-time-label' }, 'From'),
-              h('select', { className: 'as-time-sel', value: cfg.autoSwitch?.workStart ?? 8,
-                onChange: e => updField('autoSwitch', { ...(cfg.autoSwitch || {}), workStart: parseInt(e.target.value) }) },
-                ...Array.from({ length: 24 }, (_, i) => h('option', { key: i, value: i }, `${i.toString().padStart(2,'0')}:00`))
-              ),
-              h('span', { className: 'as-time-sep' }, '—'),
-              h('select', { className: 'as-time-sel', value: cfg.autoSwitch?.workEnd ?? 17,
-                onChange: e => updField('autoSwitch', { ...(cfg.autoSwitch || {}), workEnd: parseInt(e.target.value) }) },
-                ...Array.from({ length: 24 }, (_, i) => h('option', { key: i, value: i }, `${i.toString().padStart(2,'0')}:00`))
-              ),
-            ),
-            h('div', { className: 'as-days' },
-              ...[['M',1],['T',2],['W',3],['T',4],['F',5],['S',6],['S',0]].map(([label, d], idx) => {
-                const workDays = cfg.autoSwitch?.workDays || [1,2,3,4,5];
-                const on = workDays.includes(d);
-                return h('button', { type: 'button',
-                  key: `${label}${idx}`,
-                  className: 'as-day' + (on ? ' on' : ''),
-                  title: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d],
-                  onClick: () => {
-                    const updated = on ? workDays.filter(x => x !== d) : [...workDays, d].sort((a,b) => a-b);
-                    updField('autoSwitch', { ...(cfg.autoSwitch || {}), workDays: updated });
-                  }
-                }, label);
-              })
-            )
-          ),
-          h('div', { className: 'as-preview' },
-            (() => {
-              const days = cfg.autoSwitch?.workDays || [1,2,3,4,5];
-              const names = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-              const s = cfg.autoSwitch?.workStart ?? 8;
-              const e = cfg.autoSwitch?.workEnd ?? 17;
-              const now = new Date();
-              const currentlyWork = days.includes(now.getDay()) && (now.getHours() + now.getMinutes()/60) >= s && (now.getHours() + now.getMinutes()/60) < e;
-              return [
-                h('strong', { key: 'mode', style: { color: currentlyWork ? 'oklch(62% 0.16 55)' : 'oklch(60% 0.15 250)' } },
-                  currentlyWork ? '💼 Work' : '🏠 Personal'),
-                ` now · Work: ${days.map(d => names[d]).join(', ')} ${s.toString().padStart(2,'0')}:00–${e.toString().padStart(2,'0')}:00`,
-              ];
-            })()
-          )
-        )
-      ),
       saved && h('div', { className: 'saved-ok' }, h(Icon, { d: I.check, size: 13 }), ' Saved')
     ),
 
-    // SERVICES
-    tab === 'services' && h('div', null,
+    // WIDGETS (Services / Links / Status / Feeds)
+    tab === 'widgets' && h('div', null,
+      h('div', { className: 'set-tabs' },
+        ...WTABS.map(w =>
+          h('button', {
+            key: w.key, type: 'button',
+            className: 'set-tab' + (wtab === w.key ? ' on' : ''),
+            onClick: () => setWtab(w.key),
+          }, w.label)
+        )
+      ),
+
+      wtab === 'services' && h('div', null,
       (cfg.services || []).map(s =>
         editSvc === s.id
           ? h(SvcEditForm, { key: s.id, svc: s, onSave: saveSvc, onCancel: () => setEditSvc(null) })
@@ -5509,10 +5487,9 @@ function SettingsView({ cfg, setCfg, backend }) {
         ? h(SvcEditForm, { svc: { id: '', name: '', logo: 'generic', url: '', color: ACCENTS[0], stats: [], mode: 'both' }, onSave: saveSvc, onCancel: () => setEditSvc(null) })
         : h('button', { type: 'button', className: 'btn btn-s', style: { marginTop: 6 }, onClick: () => setEditSvc('new') }, h(Icon, { d: I.plus, size: 13 }), ' Add service'),
       saved && h('div', { className: 'saved-ok', style: { marginTop: 10 } }, h(Icon, { d: I.check, size: 13 }), ' Saved')
-    ),
+      ),
 
-    // LINKS
-    tab === 'links' && h('div', null,
+      wtab === 'links' && h('div', null,
       (cfg.links || []).map(l =>
         editLnk === l.id
           ? h(LnkEditForm, { key: l.id, lnk: l, onSave: saveLnk, onCancel: () => setEditLnk(null) })
@@ -5532,75 +5509,77 @@ function SettingsView({ cfg, setCfg, backend }) {
         ? h(LnkEditForm, { lnk: { id: '', name: '', url: '', desc: '', color: ACCENTS[0], mode: 'both' }, onSave: saveLnk, onCancel: () => setEditLnk(null) })
         : h('button', { type: 'button', className: 'btn btn-s', style: { marginTop: 6 }, onClick: () => setEditLnk('new') }, h(Icon, { d: I.plus, size: 13 }), ' Add link'),
       saved && h('div', { className: 'saved-ok', style: { marginTop: 10 } }, h(Icon, { d: I.check, size: 13 }), ' Saved')
-    ),
+      ),
 
-    // STATUS MONITOR
-    tab === 'status' && h('div', null,
+      wtab === 'status' && h('div', null,
       h('p', { className: 'field-hint', style: { marginBottom: 12 } },
         'These services appear as status pills on the dashboard. Any URL returning ',
         h('code', null, '{"status":{"indicator":"none|minor|major|critical"}}'),
         ' works (Atlassian Statuspage format). Indicators: none = green, minor = yellow, major = orange, critical = red.'
       ),
       // Quick-add presets
-      h('div', { className: 'set-gtitle', style: { marginBottom: 8 } }, 'Quick add'),
-      h('div', { className: 'status-presets' },
-        [
-      { name: 'GitHub', logo: 'github', url: 'https://www.githubstatus.com/api/v2/status.json' },
-      { name: 'Cloudflare', logo: 'cloudflare', url: 'https://www.cloudflarestatus.com/api/v2/status.json' },
-      { name: 'Discord', logo: 'discord', url: 'https://discordstatus.com/api/v2/status.json' },
-      { name: 'Vercel', logo: 'vercel', url: 'https://www.vercel-status.com/api/v2/status.json' },
-      { name: 'OpenAI', logo: 'openai', url: 'https://status.openai.com/api/v2/status.json' },
-      { name: 'Stripe', logo: 'stripe', url: 'https://status.stripe.com/api/v2/status.json' },
-      { name: 'Linear', logo: 'linear', url: 'https://linearstatus.com/api/v2/status.json' },
-      { name: 'Datadog', logo: 'datadog', url: 'https://status.datadoghq.com/api/v2/status.json' },
-      { name: 'npm', logo: 'npm', url: 'https://status.npmjs.org/api/v2/status.json' },
-      { name: 'Atlassian', logo: 'atlassian', url: 'https://jira-software.status.atlassian.com/api/v2/status.json' },
-      { name: 'Fastly', logo: 'fastly', url: 'https://www.fastlystatus.com/api/v2/status.json' },
-      { name: 'Twilio', logo: 'twilio', url: 'https://status.twilio.com/api/v2/status.json' }
-    ].map(p => {
-          const already = (cfg.externalStatus || []).some(s => s.url === p.url);
-          return h('button', {
-            key: p.name, type: 'button',
-            className: 'status-preset-chip' + (already ? ' added' : ''),
-            title: already ? 'Already added' : `Add ${p.name}`,
-            onClick: () => {
-              if (already) return;
-              const id = 'es' + Date.now();
-              save({ ...cfg, externalStatus: [...(cfg.externalStatus || []), { id, ...p }] });
+      h('div', { className: 'set-g' },
+        h('div', { className: 'set-gtitle' }, 'Quick add'),
+        h('div', { className: 'status-presets' },
+          [
+        { name: 'GitHub', logo: 'github', url: 'https://www.githubstatus.com/api/v2/status.json' },
+        { name: 'Cloudflare', logo: 'cloudflare', url: 'https://www.cloudflarestatus.com/api/v2/status.json' },
+        { name: 'Discord', logo: 'discord', url: 'https://discordstatus.com/api/v2/status.json' },
+        { name: 'Vercel', logo: 'vercel', url: 'https://www.vercel-status.com/api/v2/status.json' },
+        { name: 'OpenAI', logo: 'openai', url: 'https://status.openai.com/api/v2/status.json' },
+        { name: 'Stripe', logo: 'stripe', url: 'https://status.stripe.com/api/v2/status.json' },
+        { name: 'Linear', logo: 'linear', url: 'https://linearstatus.com/api/v2/status.json' },
+        { name: 'Datadog', logo: 'datadog', url: 'https://status.datadoghq.com/api/v2/status.json' },
+        { name: 'npm', logo: 'npm', url: 'https://status.npmjs.org/api/v2/status.json' },
+        { name: 'Atlassian', logo: 'atlassian', url: 'https://jira-software.status.atlassian.com/api/v2/status.json' },
+        { name: 'Fastly', logo: 'fastly', url: 'https://www.fastlystatus.com/api/v2/status.json' },
+        { name: 'Twilio', logo: 'twilio', url: 'https://status.twilio.com/api/v2/status.json' }
+      ].map(p => {
+            const already = (cfg.externalStatus || []).some(s => s.url === p.url);
+            return h('button', {
+              key: p.name, type: 'button',
+              className: 'status-preset-chip' + (already ? ' added' : ''),
+              title: already ? 'Already added' : `Add ${p.name}`,
+              onClick: () => {
+                if (already) return;
+                const id = 'es' + Date.now();
+                save({ ...cfg, externalStatus: [...(cfg.externalStatus || []), { id, ...p }] });
+              },
             },
-          },
-            h('img', { src: `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${p.logo}.png`, alt: p.name, onError: e => e.target.style.display='none' }),
-            p.name,
-          );
-        })
+              h('img', { src: `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${p.logo}.png`, alt: p.name, onError: e => e.target.style.display='none' }),
+              p.name,
+            );
+          })
+        ),
       ),
-      h('div', { className: 'set-gtitle', style: { marginBottom: 8 } }, 'Configured'),
-      (cfg.externalStatus || []).map(s =>
-        editStatus === s.id
-          ? h(StatusEditForm, { key: s.id, entry: s, onSave: saveStatusEntry, onCancel: () => setEditStatus(null) })
-          : h('div', { key: s.id, className: 'list-item' },
-              h('div', { className: 'li-body' },
-                s.logo && h('img', {
-                  src: `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${s.logo}.png`,
-                  width: 16, height: 16, style: { borderRadius: 3, objectFit: 'contain', flexShrink: 0 },
-                }),
-                h('span', { className: 'li-name' }, s.name),
-                h('span', { className: 'li-url' }, s.url || '—'),
-              ),
-              h('div', { className: 'li-acts' },
-                h('button', { type: 'button', className: 'mini', onClick: () => setEditStatus(s.id) }, 'Edit'),
-                h('button', { type: 'button', className: 'mini del', onClick: () => delStatusEntry(s.id) }, 'Delete'),
+      h('div', { className: 'set-g' },
+        h('div', { className: 'set-gtitle' }, 'Configured'),
+        (cfg.externalStatus || []).map(s =>
+          editStatus === s.id
+            ? h(StatusEditForm, { key: s.id, entry: s, onSave: saveStatusEntry, onCancel: () => setEditStatus(null) })
+            : h('div', { key: s.id, className: 'list-item' },
+                h('div', { className: 'li-body' },
+                  s.logo && h('img', {
+                    src: `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${s.logo}.png`,
+                    width: 16, height: 16, style: { borderRadius: 3, objectFit: 'contain', flexShrink: 0 },
+                  }),
+                  h('span', { className: 'li-name' }, s.name),
+                  h('span', { className: 'li-url' }, s.url || '—'),
+                ),
+                h('div', { className: 'li-acts' },
+                  h('button', { type: 'button', className: 'mini', onClick: () => setEditStatus(s.id) }, 'Edit'),
+                  h('button', { type: 'button', className: 'mini del', onClick: () => delStatusEntry(s.id) }, 'Delete'),
+                )
               )
-            )
+        ),
+        editStatus === 'new'
+          ? h(StatusEditForm, { entry: { id: '', name: '', logo: '', url: '' }, onSave: saveStatusEntry, onCancel: () => setEditStatus(null) })
+          : h('button', { type: 'button', className: 'btn btn-s', style: { marginTop: 6 }, onClick: () => setEditStatus('new') }, h(Icon, { d: I.plus, size: 13 }), ' Add service'),
       ),
-      editStatus === 'new'
-        ? h(StatusEditForm, { entry: { id: '', name: '', logo: '', url: '' }, onSave: saveStatusEntry, onCancel: () => setEditStatus(null) })
-        : h('button', { type: 'button', className: 'btn btn-s', style: { marginTop: 6 }, onClick: () => setEditStatus('new') }, h(Icon, { d: I.plus, size: 13 }), ' Add service'),
       saved && h('div', { className: 'saved-ok', style: { marginTop: 10 } }, h(Icon, { d: I.check, size: 13 }), ' Saved')
-    ),
+      ),
 
-    // FEEDS
-    tab === 'feeds' && h('div', null,
+      wtab === 'feeds' && h('div', null,
       // RSS section
       h('div', { className: 'set-g' },
         h('div', { className: 'set-gtitle' }, 'RSS / Atom feeds'),
@@ -5647,6 +5626,7 @@ function SettingsView({ cfg, setCfg, backend }) {
           : h('button', { type: 'button', className: 'btn btn-s', style: { marginTop: 6 }, onClick: () => setEditYT('new') }, h(Icon, { d: I.plus, size: 13 }), ' Add channel'),
       ),
       saved && h('div', { className: 'saved-ok' }, h(Icon, { d: I.check, size: 13 }), ' Saved')
+      ),
     ),
 
     // AUTOMATIONS (Home Assistant)
@@ -5713,13 +5693,13 @@ function SettingsView({ cfg, setCfg, backend }) {
     ),
 
     // DISCOVER (TMDB)
-        tab === 'discover' && h(DiscoverSettingsTab, { backend }),
+    tab === 'discover' && h(DiscoverSettingsTab, { backend }),
 
-        // INTEGRATIONS
-        tab === 'integrations' && h(IntegrationsTab, { cfg, setCfg, backend }),
+    // INTEGRATIONS
+    tab === 'integrations' && h(IntegrationsTab, { cfg, setCfg, backend }),
 
-        // LAYOUT (moved out of general)
-        tab === 'layout' && h(LayoutTab, { cfg, save }),
+    // LAYOUT
+    tab === 'layout' && h(LayoutTab, { cfg, save }),
       ) // end set-main
     ) // end set-layout
   );
@@ -5901,16 +5881,6 @@ function DiscoverSettingsTab({ backend }) {
       statusUrl: '/api/tmdb-status',
       saveUrl: '/api/set-tmdb-token',
       bodyKey: 'token',
-    }),
-    h(ApiKeyField, {
-      label: 'Last.fm — Music',
-      hint: 'Get a free API key at',
-      hintUrl: 'https://www.last.fm/api/account/create',
-      hintUrlText: 'last.fm/api/account/create',
-      placeholder: 'a1b2c3d4e5f6…',
-      statusUrl: '/api/lastfm-status',
-      saveUrl: '/api/set-lastfm-key',
-      bodyKey: 'key',
     }),
   );
 }
@@ -6121,21 +6091,16 @@ function IntegrationsTab({ cfg, setCfg, backend }) {
         saveUrl: '/api/set-github-creds',
       }),
     ),
-    h('div', { className: 'set-g' },
-      h('div', { className: 'set-gtitle' }, 'Music'),
-      h(IntegrationField, {
-        label: 'Last.fm',
-        hint: 'Get your free API key at ',
-        hintUrl: 'https://www.last.fm/api/account/create',
-        hintUrlText: 'last.fm/api',
-        fields: [
-          { key: 'apiKey', label: 'API key', placeholder: 'Last.fm API key', mono: true },
-          { key: 'username', label: 'Last.fm username', placeholder: 'yourusername' },
-        ],
-        statusUrl: '/api/lastfm-status',
-        saveUrl: '/api/set-lastfm-creds',
-      }),
-    ),
+    h(ApiKeyField, {
+      label: 'Last.fm — Music',
+      hint: 'Get a free API key at',
+      hintUrl: 'https://www.last.fm/api/account/create',
+      hintUrlText: 'last.fm/api/account/create',
+      placeholder: 'a1b2c3d4e5f6…',
+      statusUrl: '/api/lastfm-status',
+      saveUrl: '/api/set-lastfm-key',
+      bodyKey: 'key',
+    }),
     h(CustomApiBuilder, { cfg, save }),
   );
 }
