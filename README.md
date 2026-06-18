@@ -155,6 +155,13 @@ All optional. The dashboard works without any API keys.
 | Deluge | `DELUGE_URL` + `DELUGE_PASS` | Download queue |
 | AdGuard Home | `ADGUARD_URL` + credentials | DNS query stats |
 | Glances | `GLANCES_URL` | Extended system stats |
+| Uptime Kuma | `UPTIMEKUMA_URL` + `UPTIMEKUMA_KEY` | Monitor up/down status (see below) |
+| SSL certificate expiry | none — just a host:port | Days until a cert expires (see below) |
+
+### Network & Security
+
+- **Uptime Kuma** needs a one-time setup: in Kuma go to Settings → Status Pages, create a status page listing the monitors you want on the dashboard, then set its slug as the service's `apiKey` in `earth.yaml` (or `UPTIMEKUMA_KEY` in `.env`). The status page must be unauthenticated — Kuma doesn't expose a plain JSON API for authenticated monitor data.
+- **SSL certificate expiry** needs no credentials at all — it opens a TLS handshake to whatever `host:port` you list and reads the certificate's expiry date directly. Add one `sslcheck` entry per host in `earth.yaml`'s `services[]` (only hosts that actually terminate TLS — a plain-HTTP host will time out after 8s on every poll). You'll get a proactive alert when a cert has under 14 days left, and again under 3 days.
 
 ---
 
