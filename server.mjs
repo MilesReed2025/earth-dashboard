@@ -45,6 +45,7 @@ import { serve } from "@hono/node-server";
 import { parseDocument, parse } from "yaml";
 import chokidar from "chokidar";
 import { WebSocketServer } from "ws";
+import { getCertExpiry } from "./adapters/sslcheck.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const CONFIG_PATH = join(here, "earth.yaml");
@@ -1151,6 +1152,7 @@ const alertState = {
   downServices: new Set(),   // service ids currently down
   diskAlerted:  new Set(),   // disk labels already alerted at >85%
   knownDone:    new Set(),   // torrent hashes already reported as done
+  sslAlerted:   new Map(),   // service id -> last alert level fired ("warn"/"error")
 };
 
 async function runAlerts() {
@@ -1238,6 +1240,32 @@ async function runAlerts() {
         }
       }
     } catch { /* qb unavailable */ }
+  }
+
+  // ── 4. SSL certificate expiry ───────────────────────────────────────────
+  const sslTargets = services.filter((s) => (s.adapter || s.logo) === "sslcheck" && s.url);
+  for (const svc of sslTargets) {
+    try {
+      const host = svc.url.replace(/^https?:\/\//, "").split("/")[0];
+      const [hostname, portStr] = host.split(":");
+      const port = Number(portStr) || 443;
+      const info = await cached(`sslcheck:${hostname}:${port}`, 3_600_000, () => getCertExpiry(hostname, port));
+      const daysLeft = Math.floor((info.validTo - Date.now()) / 86_400_000);
+
+      if (daysLeft < 3) {
+        if (alertState.sslAlerted.get(svc.id) !== "error") {
+          alertState.sslAlerted.set(svc.id, "error");
+          broadcastAlert("error", `SSL cert expiring imminently: ${svc.name}`, `${daysLeft} day(s) left`);
+        }
+      } else if (daysLeft < 14) {
+        if (alertState.sslAlerted.get(svc.id) !== "warn") {
+          alertState.sslAlerted.set(svc.id, "warn");
+          broadcastAlert("warn", `SSL cert expiring soon: ${svc.name}`, `${daysLeft} days left`);
+        }
+      } else {
+        alertState.sslAlerted.delete(svc.id);
+      }
+    } catch { /* host unreachable — covered by the service-reachability check above */ }
   }
 }
 

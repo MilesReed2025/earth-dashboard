@@ -41,6 +41,26 @@ services:
     stats: []
     section: Media
 
+  # Uptime Kuma → Settings → Status Pages → create one listing the monitors
+  # to expose here, then use its slug as apiKey below.
+  - id: s10
+    name: Uptime Kuma
+    logo: generic
+    adapter: uptimekuma
+    url: http://uptimekuma.local:3001
+    apiKey: homelab
+    section: Network
+
+  # SSL cert expiry — one entry per host that terminates TLS. No credentials
+  # needed; only add hosts that actually speak TLS (plain HTTP hosts will
+  # time out after 8s on every poll).
+  - id: s11
+    name: "example.com cert"
+    logo: generic
+    adapter: sslcheck
+    url: example.com:443
+    section: Network
+
 # ── Quick-link tiles on the home page
 links:
   - { id: l1, name: Home Assistant, url: "http://homeassistant.local", color: "#18bcf2", desc: "Smart home" }
