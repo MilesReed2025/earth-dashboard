@@ -9,6 +9,12 @@ name: Your Name
 location: { name: London, lat: 51.505, lng: -0.127 }
 theme: dark   # dark | light | nord | catppuccin | gruvbox
 
+# ── Push earth.yaml to a GitHub repo from Settings → Config (requires a
+# GitHub PAT set in Settings → Integrations — token itself stays in .env)
+# github:
+#   repo: yourusername/earth-config   # owner/name
+#   path: earth.yaml                  # file path within that repo
+
 # ── Glances system monitoring (optional — remove if not using Glances)
 # glances:
 #   url: http://localhost:61208

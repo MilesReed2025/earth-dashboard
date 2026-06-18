@@ -3852,6 +3852,46 @@ function NewsRow({ feeds, onGoSettings }) {
   );
 }
 
+function useGitHubActivity(enabled) {
+  const [state, setState] = useState({ events: [], configured: null, loading: true });
+  useEffect(() => {
+    if (!enabled) return;
+    let dead = false;
+    const load = () => fetch('/api/github-activity', { signal: AbortSignal.timeout(8000) })
+      .then(r => r.json())
+      .then(j => { if (!dead) setState({ events: j.events || [], configured: j.configured, loading: false }); })
+      .catch(() => { if (!dead) setState(s => ({ ...s, loading: false })); });
+    load();
+    const id = setInterval(load, 3 * 60 * 1000);
+    return () => { dead = true; clearInterval(id); };
+  }, [enabled]);
+  return state;
+}
+
+function GitHubActivityRow({ onGoSettings }) {
+  const { events, configured, loading } = useGitHubActivity(true);
+  if (configured === false) {
+    return h('div', { className: 'section' },
+      h('div', { className: 'section-hd' }, h('span', { className: 'section-title' }, 'GitHub activity')),
+      h('div', { className: 'row-empty-cta' },
+        h('p', null, 'Connect GitHub in Settings → Integrations to see your recent activity.'),
+        h('button', { type: 'button', className: 'btn btn-s', onClick: onGoSettings }, 'Open Settings')
+      )
+    );
+  }
+  return h(SectionRow, { title: 'GitHub activity', loading, empty: (!loading && !events.length ? 'No recent activity.' : null) },
+    ...events.slice(0, 12).map((ev, i) =>
+      h('a', { key: i, className: 'nm-side', href: ev.link, target: '_blank', rel: 'noreferrer' },
+        h('div', { className: 'nm-hd' },
+          h('span', { className: 'nm-src' }, ev.repo || ev.type),
+          h('span', { className: 'nm-when' }, relTime(ev.createdAt)),
+        ),
+        h('div', { className: 'nm-side-title' }, ev.desc),
+      )
+    )
+  );
+}
+
 /* ─────────────────────────────────────────────────────────
    NEWS VIEW (full page — magazine layout)
 ───────────────────────────────────────────────────────── */
@@ -4223,6 +4263,7 @@ function HomeView({ cfg, setCfg, mode, goSettings, backend }) {
     h(ServicesRow, { services: visibleServices, backend }),
     h(YouTubeRow, { channels: youtube, onGoSettings: goSettings }),
     h(NewsRow, { feeds, onGoSettings: goSettings }),
+    (cfg.layout?.showGithubActivity !== false) && h(GitHubActivityRow, { onGoSettings: goSettings }),
     h(LinksRow, { links }),
     h(NotesSection, {
       value: cfg.notes || '',
@@ -4848,6 +4889,9 @@ function ConfigTab({ backend }) {
   const [saving, setSaving] = useState(false);
   const [savedOk, setSavedOk] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [pushing, setPushing] = useState(false);
+  const [pushOk, setPushOk] = useState(false);
+  const [pushErr, setPushErr] = useState(null);
   const importRef = React.useRef(null);
 
   const exportYaml = () => {
@@ -4905,6 +4949,20 @@ function ConfigTab({ backend }) {
     setSaving(false);
   };
 
+  const pushToGitHub = async () => {
+    setPushing(true); setPushErr(null); setPushOk(false);
+    try {
+      const r = await fetch('/api/github-push', { method: 'POST', signal: AbortSignal.timeout(15000) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || j.error) throw new Error(j.error || `HTTP ${r.status}`);
+      setPushOk(true);
+      setTimeout(() => setPushOk(false), 2500);
+    } catch (e) {
+      setPushErr(String(e.message || e));
+    }
+    setPushing(false);
+  };
+
   if (!backend) {
     return h('div', { className: 'set-g' },
       h('div', { className: 'set-gtitle' }, 'earth.yaml'),
@@ -4935,7 +4993,11 @@ function ConfigTab({ backend }) {
         h('button', { type: 'button', className: 'btn btn-s', onClick: exportYaml, disabled: loading, title: 'Download earth.yaml' }, '↓ Export'),
         h('button', { type: 'button', className: 'btn btn-s', onClick: () => importRef.current?.click(), title: 'Import a earth.yaml file' }, '↑ Import'),
         h('input', { ref: importRef, type: 'file', accept: '.yaml,.yml,text/yaml,text/plain', style: { display: 'none' }, onChange: onImport }),
+        h('button', { type: 'button', className: 'btn btn-s', onClick: pushToGitHub, disabled: pushing,
+          title: 'Push current earth.yaml to your configured GitHub repo' }, pushing ? 'Pushing…' : '⇧ Push to GitHub'),
         savedOk && h('span', { className: 'saved-ok' }, h(Icon, { d: I.check, size: 13 }), ' Saved'),
+        pushOk && h('span', { className: 'saved-ok' }, h(Icon, { d: I.check, size: 13 }), ' Pushed'),
+        pushErr && h('span', { className: 'field-err' }, pushErr),
       ),
       h('p', { className: 'set-help', style: { marginTop: 12, lineHeight: 1.6 } },
         'This file is the single source of truth. Comments and formatting are preserved. ',
@@ -4959,6 +5021,7 @@ function LayoutTab({ cfg, save }) {
     { key: 'showResources', label: 'Resources panel',            sub: 'CPU, RAM, disk chips in the topbar',     def: true },
     { key: 'showStatus',    label: 'Status bar',                 sub: 'Service status chip in the topbar',      def: true },
     { key: 'showModePill',  label: 'Work / Personal switcher',   sub: 'Mode buttons in the sidebar footer',     def: true },
+    { key: 'showGithubActivity', label: 'GitHub activity',       sub: 'Recent activity feed on the Home page',  def: true },
   ];
   const hidden = new Set(cfg.layout?.hiddenNav || []);
   const toggle = (key) => {
@@ -6049,6 +6112,27 @@ function CustomApiBuilder({ cfg, save }) {
   );
 }
 
+function GitHubRepoFields({ cfg, save }) {
+  const gh = cfg.github || {};
+  return h('div', { style: { marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--b)' } },
+    h('p', { className: 'field-hint', style: { marginBottom: 8 } },
+      'Repo and file path used by the "Push to GitHub" button in Settings → Config.'),
+    h('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
+      h('div', { className: 'set-f' },
+        h('label', { className: 'set-l' }, 'Repo (owner/name)'),
+        h('input', { className: 'set-i', placeholder: 'yourusername/earth-config', value: gh.repo || '',
+          onChange: e => save({ ...cfg, github: { ...gh, repo: e.target.value } }) }),
+      ),
+      h('div', { className: 'set-f' },
+        h('label', { className: 'set-l' }, 'File path'),
+        h('input', { className: 'set-i', placeholder: 'earth.yaml', value: gh.path || '',
+          onChange: e => save({ ...cfg, github: { ...gh, path: e.target.value } }),
+          style: { fontFamily: 'monospace', fontSize: '.78rem' } }),
+      ),
+    ),
+  );
+}
+
 function IntegrationsTab({ cfg, setCfg, backend }) {
   const save = nc => { setCfg(nc); saveCfg(nc); };
   return h('div', null,
@@ -6090,6 +6174,7 @@ function IntegrationsTab({ cfg, setCfg, backend }) {
         statusUrl: '/api/github-status',
         saveUrl: '/api/set-github-creds',
       }),
+      h(GitHubRepoFields, { cfg, save }),
     ),
     h(ApiKeyField, {
       label: 'Last.fm — Music',

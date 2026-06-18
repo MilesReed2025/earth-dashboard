@@ -1005,7 +1005,65 @@ app.post("/api/set-github-creds", async (c) => {
   set("GITHUB_TOKEN", token); set("GITHUB_USER", username);
   fs.writeFileSync(envPath, content, "utf8");
   process.env.GITHUB_TOKEN = token; process.env.GITHUB_USER = username;
+  cacheStore.delete(`gh:events:${username}`);
   return c.json({ ok: true });
+});
+
+app.get("/api/github-activity", async (c) => {
+  const token = process.env.GITHUB_TOKEN, user = process.env.GITHUB_USER;
+  if (!token || !user) return c.json({ configured: false, events: [] });
+  try {
+    const events = await cached(`gh:events:${user}`, 180_000, async () => {
+      const r = await fetch(`https://api.github.com/users/${encodeURIComponent(user)}/events?per_page=20`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "earth-dashboard" },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!r.ok) throw new Error(`GitHub events → HTTP ${r.status}`);
+      const raw = await r.json();
+      return raw.slice(0, 20).map(ev => {
+        const repo = ev.repo?.name || "";
+        let desc = ev.type.replace(/Event$/, ""), link = repo ? `https://github.com/${repo}` : "https://github.com";
+        if (ev.type === "PushEvent") { const n = ev.payload?.commits?.length || 0; desc = `Pushed ${n} commit${n===1?"":"s"}`; }
+        else if (ev.type === "PullRequestEvent") { desc = `${ev.payload?.action||""} PR #${ev.payload?.number??""}`.trim(); link = ev.payload?.pull_request?.html_url || link; }
+        else if (ev.type === "IssuesEvent") { desc = `${ev.payload?.action||""} issue #${ev.payload?.issue?.number??""}`.trim(); link = ev.payload?.issue?.html_url || link; }
+        else if (ev.type === "CreateEvent") { desc = `Created ${ev.payload?.ref_type||"ref"}${ev.payload?.ref?" "+ev.payload.ref:""}`; }
+        else if (ev.type === "WatchEvent") { desc = "Starred"; }
+        else if (ev.type === "ForkEvent") { desc = "Forked"; }
+        return { type: ev.type, repo, desc, link, createdAt: ev.created_at };
+      });
+    });
+    return c.json({ configured: true, events });
+  } catch (e) { return c.json({ configured: true, events: [], error: String(e?.message||e) }, 502); }
+});
+
+app.post("/api/github-push", async (c) => {
+  const token = process.env.GITHUB_TOKEN, user = process.env.GITHUB_USER;
+  if (!token || !user) return c.json({ error: "GitHub not configured — add a token in Settings → Integrations" }, 400);
+  let cfg;
+  try { cfg = await readConfigJson(); } catch (e) { return c.json({ error: `config unreadable: ${e.message}` }, 500); }
+  const repo = (cfg.github?.repo || "").trim();
+  const path = (cfg.github?.path || "earth.yaml").trim();
+  if (!repo.includes("/")) return c.json({ error: "Set a GitHub repo (owner/name) in Settings → Integrations first" }, 400);
+  try {
+    const text = await readConfigText();
+    const contentB64 = Buffer.from(text, "utf8").toString("base64");
+    const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
+    const ghHeaders = { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "earth-dashboard" };
+    let sha;
+    const getR = await fetch(apiUrl, { headers: ghHeaders, signal: AbortSignal.timeout(10_000) });
+    if (getR.ok) sha = (await getR.json()).sha;
+    else if (getR.status !== 404) { const j = await getR.json().catch(()=>({})); throw new Error(j.message || `GitHub GET → HTTP ${getR.status}`); }
+    const putR = await fetch(apiUrl, {
+      method: "PUT", headers: { ...ghHeaders, "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "Update earth.yaml via dashboard", content: contentB64, ...(sha ? { sha } : {}) }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const putJ = await putR.json().catch(()=>({}));
+    if (!putR.ok) throw new Error(putJ.message || `GitHub PUT → HTTP ${putR.status}`);
+    return c.json({ ok: true, commitUrl: putJ.commit?.html_url || null });
+  } catch (e) { return c.json({ error: String(e?.message||e) }, 502); }
 });
 
 /* ── SERVER-SIDE PROXY (for custom API widgets) ─────────────────────────── */
