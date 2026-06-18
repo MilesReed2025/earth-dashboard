@@ -975,6 +975,11 @@
     .ob-btn-sec { background: none; border: none; color: var(--t4); font-size: .76rem; cursor: pointer; font-family: inherit; padding: 0; transition: color .12s; }
     .ob-btn-sec:hover { color: var(--t2); }
     .ob-err { font-size: .72rem; color: oklch(60% 0.19 25); margin-top: 10px; }
+    .ob-disc-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
+    .ob-disc-row { display: flex; align-items: flex-start; gap: 9px; padding: 10px; border: 1px solid var(--b); border-radius: 10px; }
+    .ob-disc-check { display: flex; align-items: center; height: 22px; flex-shrink: 0; }
+    .ob-disc-fields { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
+    .ob-disc-fields .ob-input { padding: 6px 9px; font-size: .78rem; }
 
     .wx-btn {
       display: inline-flex; align-items: center; gap: 5px;
@@ -4286,6 +4291,21 @@ const KNOWN_ADAPTERS = {
   ]},
 };
 
+// Onboarding "discover services" step: match a running container's image
+// repo name to a known adapter. First match wins, order doesn't matter much
+// since the patterns don't overlap.
+const DOCKER_IMAGE_HINTS = {
+  jellyfin:    /jellyfin/i,
+  radarr:      /radarr/i,
+  sonarr:      /sonarr/i,
+  immich:      /immich/i,
+  qbittorrent: /qbittorrent|qbit-?box/i,
+  deluge:      /deluge/i,
+  adguard:     /adguard/i,
+  glances:     /glances/i,
+  uptimekuma:  /uptime-?kuma/i,
+};
+
 /* ─────────────────────────────────────────────────────────
    SETTINGS — SERVICE EDIT FORM
 ───────────────────────────────────────────────────────── */
@@ -7532,8 +7552,49 @@ function OnboardModal({ cfg, setCfg }) {
   const [lastfmKey, setLastfmKey]   = useState('');
   const [saving, setSaving]   = useState(false);
   const [saveErr, setSaveErr] = useState(null);
+  const [discovered, setDiscovered]   = useState([]);   // candidates found in Docker
+  const [discoverDone, setDiscoverDone] = useState(false);
 
-  const STEPS = 2;
+  const STEPS = 3;
+
+  // Step 2 — probe Docker once, build candidates from running containers,
+  // skip the step entirely (auto-advance) if Docker is unavailable or
+  // nothing new was found.
+  useEffect(() => {
+    if (step !== 2 || discoverDone) return;
+    (async () => {
+      let candidates = [];
+      try {
+        const ping = await fetch('/api/docker/ping').then(r => r.json());
+        if (ping.ok) {
+          const containers = await fetch('/api/docker/containers').then(r => r.json());
+          const already = new Set((cfg.services || []).map(s => s.adapter || s.logo));
+          const seen = new Set();
+          for (const ct of (Array.isArray(containers) ? containers : [])) {
+            if (ct.state !== 'running') continue;
+            const match = Object.entries(DOCKER_IMAGE_HINTS).find(([, re]) => re.test(ct.image));
+            if (!match) continue;
+            const [adapter] = match;
+            if (already.has(adapter) || seen.has(adapter)) continue;
+            seen.add(adapter);
+            const port = (ct.ports?.[0] || '').split(':')[0];
+            const prettyName = ct.name.replace(/^\//, '').replace(/[_-]+/g, ' ').trim()
+              .replace(/\b\w/g, c => c.toUpperCase());
+            candidates.push({
+              id: uid(),
+              name: prettyName || KNOWN_ADAPTERS[adapter].label,
+              adapter, logo: adapter,
+              url: port ? `http://localhost:${port}` : '',
+              selected: true,
+            });
+          }
+        }
+      } catch {}
+      setDiscovered(candidates);
+      setDiscoverDone(true);
+      if (candidates.length === 0) launch(); // nothing to show — finish onboarding straight away
+    })();
+  }, [step, discoverDone]);
 
   const dismiss = (andSave = false) => {
     const nc = { ...cfg, onboarded: true, name: name.trim() || cfg.name, ...(locPicked ? { location: locPicked } : {}) };
@@ -7581,12 +7642,23 @@ function OnboardModal({ cfg, setCfg }) {
         let j; try { j = JSON.parse(text); } catch { throw new Error(`Server error ${r.status} — is the server running?`); }
         if (!r.ok || j.error) throw new Error(j.error || `Server error ${r.status}`);
       }
-      dismiss(true);
+      const acceptedServices = discovered.filter(d => d.selected).map(({ selected, ...svc }) => svc);
+      const nc = {
+        ...cfg, onboarded: true, name: name.trim() || cfg.name,
+        ...(locPicked ? { location: locPicked } : {}),
+        ...(acceptedServices.length ? { services: [...(cfg.services || []), ...acceptedServices] } : {}),
+      };
+      setCfg(nc); saveCfg(nc);
     } catch (e) {
       setSaveErr(String(e?.message || e));
       setSaving(false);
     }
   };
+
+  const toggleDiscovered = (id) =>
+    setDiscovered(prev => prev.map(d => d.id === id ? { ...d, selected: !d.selected } : d));
+  const editDiscovered = (id, field, value) =>
+    setDiscovered(prev => prev.map(d => d.id === id ? { ...d, [field]: value } : d));
 
   const Dot = ({ i }) => {
     const cls = i < step ? 'done' : i === step ? 'active' : 'pending';
@@ -7686,10 +7758,46 @@ function OnboardModal({ cfg, setCfg }) {
       }),
     ),
 
+    h('div', { className: 'ob-actions' },
+      h('button', { type: 'button', className: 'ob-btn-sec', onClick: () => setStep(0) }, '← Back'),
+      h('button', { type: 'button', className: 'ob-btn-pri', onClick: () => setStep(2) }, 'Continue →'),
+    ),
+  );
+
+  // STEP 2 — services discovered running in Docker on this host
+  const DiscRow = ({ d }) =>
+    h('div', { className: 'ob-disc-row' },
+      h('label', { className: 'ob-disc-check' },
+        h('input', { type: 'checkbox', checked: d.selected, onChange: () => toggleDiscovered(d.id) }),
+      ),
+      h(ServiceLogo, { logo: d.logo, size: 22 }),
+      h('div', { className: 'ob-disc-fields' },
+        h('input', {
+          className: 'ob-input', value: d.name, disabled: !d.selected,
+          onInput: e => editDiscovered(d.id, 'name', e.target.value),
+        }),
+        h('input', {
+          className: 'ob-input mono', value: d.url, disabled: !d.selected,
+          placeholder: 'http://host:port',
+          onInput: e => editDiscovered(d.id, 'url', e.target.value),
+        }),
+        KNOWN_ADAPTERS[d.adapter]?.auth !== 'none' &&
+          h('div', { className: 'ob-hint' }, "You'll need to add credentials for this in Settings after setup."),
+      ),
+    );
+
+  const step2 = () => h('div', { className: 'ob-body' },
+    h('div', { className: 'ob-title' }, 'We found some services'),
+    h('div', { className: 'ob-sub' }, 'Running in Docker on this machine — uncheck anything you don\'t want, or tweak the name/URL.'),
+
+    h('div', { className: 'ob-disc-list' },
+      discovered.map(d => h(DiscRow, { key: d.id, d })),
+    ),
+
     saveErr && h('div', { className: 'ob-err' }, saveErr),
 
     h('div', { className: 'ob-actions' },
-      h('button', { type: 'button', className: 'ob-btn-sec', onClick: () => setStep(0) }, '← Back'),
+      h('button', { type: 'button', className: 'ob-btn-sec', onClick: () => setStep(1) }, '← Back'),
       h('button', {
         type: 'button', className: 'ob-btn-pri',
         onClick: launch, disabled: saving,
@@ -7702,7 +7810,7 @@ function OnboardModal({ cfg, setCfg }) {
       h('div', { className: 'ob-progress' },
         ...Array.from({ length: STEPS }, (_, i) => h(Dot, { key: i, i })),
       ),
-      step === 0 ? step0() : step1(),
+      step === 0 ? step0() : step === 1 ? step1() : step2(),
     ),
   );
 }
