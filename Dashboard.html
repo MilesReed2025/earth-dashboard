@@ -1288,7 +1288,9 @@
       border-radius: 12px; padding: 14px;
       scroll-snap-align: start; position: relative; overflow: hidden;
       display: flex; flex-direction: column; gap: 0;
+      border: 1px solid transparent; transition: border-color .14s;
     }
+    .widget:hover { border-color: color-mix(in oklch, var(--wc, var(--t2)) 40%, transparent); }
     .widget::before {
       content: ''; position: absolute; inset: 0; pointer-events: none;
       background:
@@ -1307,17 +1309,6 @@
     .widget-logo img { width: 20px; height: 20px; border-radius: 3px; object-fit: contain; display: block; }
     .widget-name { font-size: .77rem; font-weight: 600; color: var(--t2); flex: 1; letter-spacing: -.01em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .widget-overlay { position: absolute; inset: 0; z-index: 1; border-radius: inherit; cursor: pointer; }
-    .widget-url {
-      position: absolute; top: 9px; right: 9px; z-index: 2;
-      width: 26px; height: 26px; border-radius: 8px;
-      background: var(--s2); border: 1px solid var(--b);
-      display: flex; align-items: center; justify-content: center;
-      text-decoration: none; color: var(--t3);
-      opacity: 0; transform: scale(.8) translateY(-2px);
-      transition: opacity .15s ease-out, transform .15s ease-out, background .12s, color .12s, border-color .12s;
-    }
-    .widget:hover .widget-url { opacity: 1; transform: scale(1) translateY(0); }
-    .widget-url:hover { background: var(--a-lo); color: var(--a); border-color: color-mix(in oklch, var(--a) 35%, transparent); }
     /* Primary stat — featured big number */
     .stat-primary { margin-bottom: 9px; padding-bottom: 9px; border-bottom: 1px solid var(--b); }
     .stat-primary-val {
@@ -3481,25 +3472,15 @@ function ServiceWidget({ svc, live }) {
   const statusLbl = isLive ? 'Live' : isErr ? 'Down' : !backendAvailable ? 'Demo' : 'Connecting…';
 
   return h('div', { className: 'widget', style: { '--wc': svc.color || 'var(--a)' } },
-    // Full-card link overlay (behind the open button)
+    // Full-card link overlay — click anywhere on the tile to open the service
     svc.url && h('a', {
       className: 'widget-overlay', href: svc.url, target: '_blank',
       rel: 'noreferrer', 'aria-label': `Open ${svc.name}`,
     }),
-    // Header: logo + name + open button
+    // Header: logo + name
     h('div', { className: 'widget-hd' },
       h('div', { className: 'widget-logo' }, h(ServiceLogo, { logo: svc.logo })),
       h('span', { className: 'widget-name' }, svc.name),
-      svc.url && h('a', {
-        className: 'widget-url', href: svc.url, target: '_blank',
-        rel: 'noreferrer', title: `Open ${svc.name}`
-      },
-        h('svg', { width: 11, height: 11, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' },
-          h('path', { d: 'M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6' }),
-          h('polyline', { points: '15 3 21 3 21 9' }),
-          h('line', { x1: '10', y1: '14', x2: '21', y2: '3' }),
-        )
-      ),
     ),
     // Primary stat — large featured value
     primary && h('div', { className: 'stat-primary' },
