@@ -1197,7 +1197,7 @@
     .nv-empty   { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 64px 20px; text-align: center; color: var(--t4); font-size: .82rem; }
 
     /* ── NEWS MAGAZINE LAYOUT ────────────────────────────── */
-    .nm-src  { font-size: .57rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
+    .nm-src  { font-size: .57rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--t2); }
     .nm-when { font-size: .6rem; color: var(--t4); flex-shrink: 0; }
     .nm-hd   { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
     .nm-top  { display: grid; grid-template-columns: 3fr 2fr; gap: 10px; }
@@ -5481,9 +5481,9 @@ function SettingsView({ cfg, setCfg, backend }) {
               h('span', { className: 'wx-pers-group-lbl' }, 'Practical advice'),
               h('div', { className: 'wx-pers-row' },
                 ...[
-                  { key: 'motorcyclist', label: '🏍  Motorcyclist' },
-                  { key: 'cyclist',      label: '🚴  Cyclist'      },
-                  { key: 'runner',       label: '🏃  Runner'       },
+                  { key: 'motorcyclist', label: 'Motorcyclist' },
+                  { key: 'cyclist',      label: 'Cyclist'      },
+                  { key: 'runner',       label: 'Runner'       },
                 ].map(({ key, label }) =>
                   h('button', { key, type: 'button',
                     className: 'wx-pers-btn' + ((cfg.weatherPersonality || 'motorcyclist') === key ? ' active' : ''),
