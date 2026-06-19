@@ -1771,6 +1771,10 @@
     .set-nav-item:hover:not(.on) { background: var(--s2); color: var(--t2); }
     .set-nav-item.on { background: var(--a-lo); color: var(--a); }
     .set-nav-sep { height: 1px; background: var(--b); margin: 6px 12px; }
+    .set-side-ver {
+      margin-top: auto; padding: 12px 16px 0; font-size: .65rem;
+      font-weight: 500; color: var(--t4); letter-spacing: .02em;
+    }
     .set-main { flex: 1; padding: 22px 26px; overflow-y: auto; min-width: 0; }
 
     /* Legacy tab pills — kept for inner sub-tabs only */
@@ -2269,6 +2273,11 @@ if (window.EARTH_DEMO) {
 
 const ReactDOM = window.ReactDOM;
 const { useState, useEffect, useRef, useCallback, createElement: h } = React;
+
+/* ─────────────────────────────────────────────────────────
+   VERSION — bump on every meaningful change, shown in Settings
+───────────────────────────────────────────────────────── */
+const APP_VERSION = '0.2.0';
 
 /* ─────────────────────────────────────────────────────────
    CONFIG
@@ -5348,6 +5357,7 @@ function SettingsView({ cfg, setCfg, backend }) {
                 item.label,
               )
         ),
+        h('div', { className: 'set-side-ver' }, `v${APP_VERSION}`),
       ),
       // ── Main content ─────────────────────────────────────────────
       h('div', { className: 'set-main' },
