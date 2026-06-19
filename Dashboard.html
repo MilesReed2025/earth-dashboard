@@ -4342,6 +4342,11 @@ const KNOWN_ADAPTERS = {
     { key: 'status',     label: 'Status',  desc: 'Up / Down' },
     { key: 'responseMs', label: 'Latency', desc: 'HTTP response time' },
   ]},
+  uptimekuma:  { label: 'Uptime Kuma',     auth: 'statuspage', stats: [
+    { key: 'up',        label: 'Monitors up', desc: 'How many monitors are currently up' },
+    { key: 'uptimePct',  label: 'Uptime',      desc: 'Percentage of monitors up, with a bar' },
+    { key: 'avgPing',    label: 'Avg ping',     desc: 'Average latency across up monitors (ms)' },
+  ]},
 };
 
 // Onboarding "discover services" step: match a running container's image
@@ -4506,6 +4511,22 @@ function SvcEditForm({ svc, onSave, onCancel }) {
       h('span', { className: 'field-hint' },
         'Saved to earth.yaml. For extra security use ',
         h('code', null, '${ENV_VAR}'), ' — add the real value to .env instead.'
+      ),
+    ),
+
+    // ── Credentials (public status-page slug) ───────────────
+    adMeta?.auth === 'statuspage' && h('div', { className: 'set-f', style: { marginBottom: 10 } },
+      h('label', { className: 'set-l' }, 'Status page slug'),
+      h('input', {
+        className: 'set-i', style: { fontFamily: 'monospace', fontSize: '.78rem' },
+        value: d.apiKey || '',
+        onChange: e => upd('apiKey', e.target.value),
+        placeholder: 'e.g. homelab',
+        autoComplete: 'off', spellCheck: false,
+      }),
+      h('span', { className: 'field-hint' },
+        'The slug from your status page\'s URL, e.g. ', h('code', null, '/status/homelab'),
+        '. Create an unprotected status page in Uptime Kuma listing the monitors to expose — password-protected pages aren\'t supported.'
       ),
     ),
 
