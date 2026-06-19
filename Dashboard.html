@@ -5324,6 +5324,7 @@ function SettingsView({ cfg, setCfg, backend }) {
     { key: 'links',    label: 'Links'    },
     { key: 'status',   label: 'Status'   },
     { key: 'feeds',    label: 'Feeds'    },
+    { key: 'youtube',  label: 'YouTube'  },
   ];
 
   const NAV = [
@@ -5332,7 +5333,6 @@ function SettingsView({ cfg, setCfg, backend }) {
     { key: 'layout',       icon: I.grid,     label: 'Layout'      },
     { sep: true },
     { key: 'widgets',      icon: I.srvr,     label: 'Widgets'     },
-    { key: 'discover',     icon: I.film,     label: 'Discover'    },
     { key: 'automations',  icon: I.bolt,     label: 'Home'        },
     { key: 'integrations', icon: I.plug,     label: 'Integrations'},
     { sep: true },
@@ -5693,7 +5693,10 @@ function SettingsView({ cfg, setCfg, backend }) {
           ? h(FeedEditForm, { feed: { id: '', name: '', url: '', mode: 'both' }, onSave: saveFeed, onCancel: () => setEditFeed(null) })
           : h('button', { type: 'button', className: 'btn btn-s', style: { marginTop: 6 }, onClick: () => setEditFeed('new') }, h(Icon, { d: I.plus, size: 13 }), ' Add feed'),
       ),
+      saved && h('div', { className: 'saved-ok' }, h(Icon, { d: I.check, size: 13 }), ' Saved')
+      ),
 
+      wtab === 'youtube' && h('div', null,
       // YouTube section
       h('div', { className: 'set-g' },
         h('div', { className: 'set-gtitle' }, 'YouTube channels'),
@@ -5782,9 +5785,6 @@ function SettingsView({ cfg, setCfg, backend }) {
       ),
       saved && h('div', { className: 'saved-ok' }, h(Icon, { d: I.check, size: 13 }), ' Saved')
     ),
-
-    // DISCOVER (TMDB)
-    tab === 'discover' && h(DiscoverSettingsTab, { backend }),
 
     // INTEGRATIONS
     tab === 'integrations' && h(IntegrationsTab, { cfg, setCfg, backend }),
@@ -5958,21 +5958,6 @@ function ApiKeyField({ label, hint, hintUrl, hintUrlText, placeholder, statusUrl
       onClick: save, style: { marginTop: 10 },
     }, saving ? 'Saving…' : 'Save'),
     saved && h('div', { className: 'saved-ok' }, h(Icon, { d: I.check, size: 13 }), ' Saved'),
-  );
-}
-
-function DiscoverSettingsTab({ backend }) {
-  return h('div', null,
-    h(ApiKeyField, {
-      label: 'TMDB — Movies & TV',
-      hint: 'Get a free Read Access Token at',
-      hintUrl: 'https://www.themoviedb.org/settings/api',
-      hintUrlText: 'themoviedb.org/settings/api',
-      placeholder: 'eyJ…',
-      statusUrl: '/api/tmdb-status',
-      saveUrl: '/api/set-tmdb-token',
-      bodyKey: 'token',
-    }),
   );
 }
 
@@ -6204,6 +6189,16 @@ function IntegrationsTab({ cfg, setCfg, backend }) {
       }),
       h(GitHubRepoFields, { cfg, save }),
     ),
+    h(ApiKeyField, {
+      label: 'TMDB — Movies & TV',
+      hint: 'Get a free Read Access Token at',
+      hintUrl: 'https://www.themoviedb.org/settings/api',
+      hintUrlText: 'themoviedb.org/settings/api',
+      placeholder: 'eyJ…',
+      statusUrl: '/api/tmdb-status',
+      saveUrl: '/api/set-tmdb-token',
+      bodyKey: 'token',
+    }),
     h(ApiKeyField, {
       label: 'Last.fm — Music',
       hint: 'Get a free API key at',
