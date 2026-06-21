@@ -1995,7 +1995,7 @@
       /* Services list rows — stack id/stats/footer instead of squeezing into one line */
       .sv-row { flex-wrap: wrap; row-gap: 10px; }
       .sv-row-id { flex: 1 0 100%; }
-      .sv-row-stats { flex: 1 0 100%; }
+      .sv-row-stats { flex: 1 0 100%; flex-wrap: wrap; overflow-x: visible; row-gap: 8px; }
       .sv-row-foot { flex: 1 0 100%; margin-left: 0; }
 
       /* Config tab save bar — wrap buttons instead of overflowing offscreen */
@@ -5064,7 +5064,7 @@ function LayoutTab({ cfg, save }) {
     { key: 'news',        label: 'News' },
     { key: 'discover',    label: 'Discover' },
     { key: 'servers',     label: 'Services' },
-    { key: 'automations', label: 'Home' },
+    { key: 'automations', label: 'Automations' },
     { key: 'docker',      label: 'Docker' },
   ];
   const TOGGLES = [
@@ -7636,14 +7636,14 @@ function AutomationsView({ cfg }) {
   const current = tab === 'automations' ? autos : tab === 'scenes' ? scenes : tab === 'scripts' ? scripts : { loading: entitiesLoading, error: null, data: [] };
 
   if (!backendAvailable) return h('div', { className: 'auto-wrap' },
-    h('div', { className: 'auto-hd' }, h('div', { className: 'auto-title' }, 'Home')),
+    h('div', { className: 'auto-hd' }, h('div', { className: 'auto-title' }, 'Automations')),
     h('div', { className: 'auto-error' }, 'Backend required — start with node server.mjs'),
   );
 
   return h('div', { className: 'auto-wrap' },
     h('div', { className: 'auto-hd' },
       h('div', null,
-        h('div', { className: 'auto-title' }, 'Home'),
+        h('div', { className: 'auto-title' }, 'Automations'),
         haUrl && h('div', { style: { fontSize: '.68rem', color: 'var(--t4)', marginTop: 2 } },
           'Home Assistant · ',
           h('a', { href: haUrl, target: '_blank', rel: 'noopener', style: { color: 'var(--t3)', textDecoration: 'none' } }, haUrl),
@@ -8209,7 +8209,7 @@ function CommandPalette({ cfg, view, setView, open, onClose, dockerContainers })
       { group: 'Go to', icon: I.news,     label: 'News',        action: () => { setView('news'); onClose(); }, skip: hidden.includes('news') },
       { group: 'Go to', icon: I.film,     label: 'Discover',    action: () => { setView('discover'); onClose(); }, skip: hidden.includes('discover') },
       { group: 'Go to', icon: I.srvr,     label: 'Services',    action: () => { setView('servers'); onClose(); }, skip: hidden.includes('servers') },
-      { group: 'Go to', icon: I.bolt,     label: 'Home',        action: () => { setView('automations'); onClose(); }, skip: hidden.includes('automations') },
+      { group: 'Go to', icon: I.bolt,     label: 'Automations', action: () => { setView('automations'); onClose(); }, skip: hidden.includes('automations') },
       { group: 'Go to', icon: I.docker,   label: 'Docker',      action: () => { setView('docker'); onClose(); }, skip: hidden.includes('docker') },
       { group: 'Go to', icon: I.settings, label: 'Settings',    action: () => { setView('settings'); onClose(); } },
     ].filter(x => !x.skip);
@@ -8840,8 +8840,8 @@ function App() {
       !(cfg.layout?.hiddenNav || []).includes('servers') && h('div', { className: 'ni' + (view === 'servers' ? ' on' : ''), onClick: () => setView('servers'), 'data-label': 'Services' },
         h(Icon, { d: I.srvr }), h('span', { className: 'ni-lbl' }, 'Services')
       ),
-      !(cfg.layout?.hiddenNav || []).includes('automations') && h('div', { className: 'ni' + (view === 'automations' ? ' on' : ''), onClick: () => setView('automations'), 'data-label': 'Home' },
-        h(Icon, { d: I.bolt }), h('span', { className: 'ni-lbl' }, 'Home')
+      !(cfg.layout?.hiddenNav || []).includes('automations') && h('div', { className: 'ni' + (view === 'automations' ? ' on' : ''), onClick: () => setView('automations'), 'data-label': 'Automations' },
+        h(Icon, { d: I.bolt }), h('span', { className: 'ni-lbl' }, 'Automations')
       ),
       !(cfg.layout?.hiddenNav || []).includes('docker') && h('div', {
         className: 'ni' + (view === 'docker' ? ' on' : ''),
@@ -8897,7 +8897,7 @@ function App() {
         { key: 'news',        icon: I.news,   label: 'News',     hidden: (cfg.layout?.hiddenNav||[]).includes('news')        },
         { key: 'discover',    icon: I.film,   label: 'Discover', hidden: (cfg.layout?.hiddenNav||[]).includes('discover')    },
         { key: 'servers',     icon: I.srvr,   label: 'Services', hidden: (cfg.layout?.hiddenNav||[]).includes('servers')     },
-        { key: 'automations', icon: I.bolt,   label: 'Home',    hidden: (cfg.layout?.hiddenNav||[]).includes('automations') },
+        { key: 'automations', icon: I.bolt,   label: 'Automations', hidden: (cfg.layout?.hiddenNav||[]).includes('automations') },
       ]
         .filter(n => !n.hidden)
         .concat({ key: 'settings', icon: I.settings, label: 'Settings' })
