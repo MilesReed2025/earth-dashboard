@@ -1695,7 +1695,8 @@
     .auto-wrap { padding: 0 24px 40px; display: flex; flex-direction: column; gap: 0; }
     .auto-hd { padding: 26px 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .auto-title { font-size: 1.1rem; font-weight: 600; color: var(--t1); letter-spacing: -.025em; }
-    .auto-tabs { display: flex; gap: 3px; background: var(--s1); border-radius: 9px; padding: 3px; border: 1px solid var(--b); }
+    .auto-tabs { display: flex; gap: 3px; background: var(--s1); border-radius: 9px; padding: 3px; border: 1px solid var(--b); overflow-x: auto; scrollbar-width: none; }
+    .auto-tabs::-webkit-scrollbar { display: none; }
     .auto-tab { padding: 5px 14px; border-radius: 6px; border: none; background: transparent; color: var(--t3); font-size: .74rem; font-weight: 500; cursor: pointer; font-family: inherit; transition: all .12s; white-space: nowrap; }
     .auto-tab.on { background: var(--s2); color: var(--t1); box-shadow: 0 1px 3px oklch(0% 0 0 / .15); }
     .auto-tab:hover:not(.on) { color: var(--t2); }
@@ -1990,6 +1991,15 @@
       .tb-stats { display: none; }
       .tb-stats-mobile-btn { display: flex; }
       .tb-panel { width: min(300px, calc(100vw - 24px)); }
+
+      /* Services list rows — stack id/stats/footer instead of squeezing into one line */
+      .sv-row { flex-wrap: wrap; row-gap: 10px; }
+      .sv-row-id { flex: 1 0 100%; }
+      .sv-row-stats { flex: 1 0 100%; }
+      .sv-row-foot { flex: 1 0 100%; margin-left: 0; }
+
+      /* Config tab save bar — wrap buttons instead of overflowing offscreen */
+      .save-bar { flex-wrap: wrap; }
 
       /* Weather forecast grid wraps to 4 cols */
       .fx-days { grid-template-columns: repeat(4, 1fr) !important; }
@@ -8890,7 +8900,6 @@ function App() {
         { key: 'automations', icon: I.bolt,   label: 'Home',    hidden: (cfg.layout?.hiddenNav||[]).includes('automations') },
       ]
         .filter(n => !n.hidden)
-        .slice(0, 4)
         .concat({ key: 'settings', icon: I.settings, label: 'Settings' })
         .map(n =>
           h('button', {
