@@ -819,7 +819,14 @@
     .time-chip b { color: var(--t2); font-weight: 500; }
 
     /* ── TOPBAR STATS ────────────────────────────────────── */
-    .tb-stats { display: flex; align-items: center; gap: 5px; position: relative; }
+    .tb-stats-wrap { position: relative; display: flex; align-items: center; }
+    .tb-stats { display: flex; align-items: center; gap: 5px; }
+    .tb-stats-mobile-btn {
+      display: none; width: 30px; height: 30px; border-radius: 8px;
+      background: var(--s1); border: 1px solid var(--b); color: var(--t3);
+      align-items: center; justify-content: center; cursor: pointer; transition: background .12s, color .12s;
+    }
+    .tb-stats-mobile-btn:hover { background: var(--s2); color: var(--t1); }
     .tb-stat-chip {
       display: flex; align-items: center; gap: 5px;
       padding: 3px 8px; border-radius: 6px;
@@ -1979,8 +1986,10 @@
       .svc-card, .link-tile { flex: 0 0 140px; }
       .news-card { flex: 0 0 175px; }
 
-      /* Suppress stat chips in topbar to save space */
+      /* Suppress stat chips in topbar to save space, show compact button instead */
       .tb-stats { display: none; }
+      .tb-stats-mobile-btn { display: flex; }
+      .tb-panel { width: min(300px, calc(100vw - 24px)); }
 
       /* Weather forecast grid wraps to 4 cols */
       .fx-days { grid-template-columns: repeat(4, 1fr) !important; }
@@ -7798,10 +7807,15 @@ function TopbarStats({ backend }) {
 
   return h(React.Fragment, null,
     open && h('div', { className: 'tb-panel-backdrop', onClick: () => setOpen(false) }),
-    h('div', { className: 'tb-stats', ref },
-      chip('CPU', cpu),
-      chip('RAM', mem),
-      chip('Disk', disk),
+    h('div', { className: 'tb-stats-wrap', ref },
+      h('div', { className: 'tb-stats' },
+        chip('CPU', cpu),
+        chip('RAM', mem),
+        chip('Disk', disk),
+      ),
+      h('button', { type: 'button', className: 'tb-stats-mobile-btn', onClick: () => setOpen(o => !o) },
+        h(Icon, { d: I.srvr, size: 16 }),
+      ),
       open && h('div', { className: 'tb-panel' },
         h('div', { className: 'tb-panel-hd' },
           h('span', { className: 'tb-panel-title' }, 'System resources'),
@@ -8866,6 +8880,7 @@ function App() {
     ),
 
     // MOBILE BOTTOM NAV (hidden via CSS on desktop, shown ≤600px)
+    // Settings is always reserved the last slot so it can never be sliced off.
     h('nav', { className: 'mobile-nav' },
       ...[
         { key: 'home',        icon: I.home,   label: 'Home'     },
@@ -8873,10 +8888,10 @@ function App() {
         { key: 'discover',    icon: I.film,   label: 'Discover', hidden: (cfg.layout?.hiddenNav||[]).includes('discover')    },
         { key: 'servers',     icon: I.srvr,   label: 'Services', hidden: (cfg.layout?.hiddenNav||[]).includes('servers')     },
         { key: 'automations', icon: I.bolt,   label: 'Home',    hidden: (cfg.layout?.hiddenNav||[]).includes('automations') },
-        { key: 'settings',    icon: I.settings, label: 'Settings' },
       ]
         .filter(n => !n.hidden)
-        .slice(0, 5)
+        .slice(0, 4)
+        .concat({ key: 'settings', icon: I.settings, label: 'Settings' })
         .map(n =>
           h('button', {
             key: n.key,
