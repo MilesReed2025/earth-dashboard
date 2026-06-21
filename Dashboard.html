@@ -1841,34 +1841,38 @@
     .stat-v.pulse { animation: statPulse 1.2s ease-in-out infinite; color: var(--t4); }
     .widget-dot.err { background: var(--r); box-shadow: 0 0 0 3px color-mix(in oklch, var(--r) 22%, transparent); }
     .sv-wrap { padding: 22px 24px 40px; }
-    .sv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
-    .sv-card {
-      background: var(--s1); border-radius: 12px; padding: 16px;
-      border: 1px solid var(--b); position: relative; overflow: hidden;
-      transition: border-color .15s;
+    .sv-list { display: flex; flex-direction: column; gap: 8px; }
+    .sv-row {
+      display: flex; align-items: center; gap: 18px;
+      background: var(--s1); border-radius: 10px; padding: 12px 16px;
+      border: 1px solid transparent; position: relative; overflow: hidden;
+      transition: border-color .14s; text-decoration: none; color: inherit;
     }
-    .sv-card::before {
+    .sv-row::before {
       content: ''; position: absolute; inset: 0; pointer-events: none;
-      background: linear-gradient(135deg, color-mix(in oklch, var(--wc, var(--t2)) 10%, transparent) 0%, transparent 50%);
+      background: linear-gradient(135deg, color-mix(in oklch, var(--wc, var(--t2)) 8%, transparent) 0%, transparent 60%);
       border-radius: inherit;
     }
-    .sv-card:hover { border-color: color-mix(in oklch, var(--wc, var(--t2)) 40%, transparent); }
-    .sv-hd { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .sv-row:hover { border-color: color-mix(in oklch, var(--wc, var(--t2)) 40%, transparent); }
+    .sv-row-id { display: flex; align-items: center; gap: 10px; flex: 0 0 210px; min-width: 0; }
+    .sv-row-stats { display: flex; align-items: center; gap: 22px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+    .sv-row-stats::-webkit-scrollbar { display: none; }
+    .sv-row-stat { display: flex; flex-direction: column; gap: 1px; min-width: 64px; flex: none; }
+    .sv-row-foot { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; margin-left: auto; padding-left: 12px; }
+    .sv-row-url { font-size: .68rem; color: var(--t4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+    .sv-row-updated { font-size: .62rem; color: var(--t4); white-space: nowrap; flex: none; }
+    .sv-row-go { color: var(--t4); display: flex; transform: rotate(180deg); transition: color .14s, transform .14s; flex: none; }
+    .sv-row:hover .sv-row-go { color: var(--wc, var(--t2)); transform: rotate(180deg) translateX(-2px); }
     .sv-name { font-size: .88rem; font-weight: 600; color: var(--t1); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -.01em; }
     .sv-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 99px; font-size: .62rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; flex: none; }
     .sv-badge.ok   { background: var(--g-lo); color: var(--g); }
     .sv-badge.err  { background: color-mix(in oklch, var(--r) 14%, transparent); color: var(--r); }
     .sv-badge.off  { background: var(--s2); color: var(--t4); }
     .sv-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-    .sv-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .sv-stat { background: var(--inner); border-radius: 8px; padding: 9px 11px; min-width: 0; }
-    .sv-stat-k { font-size: .62rem; color: var(--t4); display: block; margin-bottom: 2px; text-transform: uppercase; letter-spacing: .05em; }
-    .sv-stat-v { font-size: .86rem; font-weight: 600; color: var(--t1); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sv-stat-k { font-size: .62rem; color: var(--t4); display: block; margin-bottom: 2px; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+    .sv-stat-v { font-size: .82rem; font-weight: 600; color: var(--t1); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sv-stat-m { font-size: .6rem; color: var(--t4); display: block; margin-top: 1px; }
-    .sv-err { font-size: .68rem; color: var(--r); margin-top: 10px; line-height: 1.4; word-break: break-word; }
-    .sv-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
-    .sv-url { font-size: .68rem; color: var(--t4); text-decoration: none; transition: color .12s; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .sv-url:hover { color: var(--wc, var(--t2)); }
+    .sv-err { font-size: .68rem; color: var(--r); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sv-note { font-size: .78rem; color: var(--t4); margin-bottom: 16px; line-height: 1.6; }
 
     /* ── FORM VALIDATION ─────────────────────────────────── */
@@ -6642,7 +6646,7 @@ function DiscoverView({ cfg }) {
   );
 }
 
-function SvCard({ svc, live }) {
+function SvRow({ svc, live }) {
   const l = live[svc.id];
   const loading = backendAvailable && l === undefined;
   const isLive = l?.status === 'ok' && Array.isArray(l.stats);
@@ -6653,27 +6657,31 @@ function SvCard({ svc, live }) {
         .map(s => ({ k: s.label, v: fmtStatVal(s), m: s.meta ? relTime(s.meta) : null }))
     : (svc.stats || []).map(s => ({ k: s.k, v: s.v, m: null }));
   const badge = isLive ? ['ok', 'Live'] : isErr ? ['err', 'Down'] : loading ? ['off', '…'] : ['off', backendAvailable ? 'No data' : 'Demo'];
-  return h('div', { className: 'sv-card', style: { '--wc': svc.color || 'var(--a)' } },
-    h('div', { className: 'sv-hd' },
+  return h(svc.url ? 'a' : 'div', {
+    className: 'sv-row',
+    style: { '--wc': svc.color || 'var(--a)' },
+    ...(svc.url ? { href: svc.url, target: '_blank', rel: 'noreferrer' } : {}),
+  },
+    h('div', { className: 'sv-row-id' },
       h('div', { className: 'widget-logo' }, h(ServiceLogo, { logo: svc.logo })),
       h('span', { className: 'sv-name' }, svc.name),
       h('span', { className: `sv-badge ${badge[0]}` }, h('span', { className: 'dot' }), badge[1]),
     ),
-    h('div', { className: 'sv-stats' },
-      ...rows.map((s, i) =>
-        h('div', { key: i, className: 'sv-stat' },
-          h('span', { className: 'sv-stat-k' }, s.k),
-          h('span', { className: 'sv-stat-v' + (loading ? ' pulse' : ''), title: String(s.v) }, s.v),
-          s.m && h('span', { className: 'sv-stat-m' }, s.m),
-        )
-      )
+    h('div', { className: 'sv-row-stats' },
+      isErr && l.error
+        ? h('div', { className: 'sv-err' }, l.error)
+        : rows.map((s, i) =>
+            h('div', { key: i, className: 'sv-row-stat' },
+              h('span', { className: 'sv-stat-k' }, s.k),
+              h('span', { className: 'sv-stat-v' + (loading ? ' pulse' : ''), title: String(s.v) }, s.v),
+              s.m && h('span', { className: 'sv-stat-m' }, s.m),
+            )
+          )
     ),
-    isErr && l.error && h('div', { className: 'sv-err' }, l.error),
-    h('div', { className: 'sv-foot' },
-      svc.url
-        ? h('a', { className: 'sv-url', href: svc.url, target: '_blank', rel: 'noreferrer' }, svc.url.replace(/^https?:\/\//, '') + ' ↗')
-        : h('span', { className: 'sv-url' }, '—'),
-      l?.generatedAt && h('span', { style: { fontSize: '.62rem', color: 'var(--t4)' } }, `updated ${relTime(l.generatedAt)}`),
+    h('div', { className: 'sv-row-foot' },
+      svc.url && h('span', { className: 'sv-row-url' }, svc.url.replace(/^https?:\/\//, '')),
+      l?.generatedAt && h('span', { className: 'sv-row-updated' }, `updated ${relTime(l.generatedAt)}`),
+      svc.url && h('span', { className: 'sv-row-go' }, h(Icon, { d: I.collapse, size: 13 })),
     ),
   );
 }
@@ -6716,8 +6724,8 @@ function ServersView({ cfg, mode }) {
       ' to see live data.'),
 
     singleDefault
-      ? h('div', { className: 'sv-grid' },
-          ...services.map(svc => h(SvCard, { key: svc.id, svc, live }))
+      ? h('div', { className: 'sv-list' },
+          ...services.map(svc => h(SvRow, { key: svc.id, svc, live }))
         )
       : h('div', { className: 'svc-sections' },
           groups.map(key => {
@@ -6733,8 +6741,8 @@ function ServersView({ cfg, mode }) {
                 h('span', { className: 'svc-section-count' }, group.length),
               ),
               isOpen && h('div', { style: { padding: '4px 20px 14px' } },
-                h('div', { className: 'sv-grid' },
-                  ...group.map(svc => h(SvCard, { key: svc.id, svc, live }))
+                h('div', { className: 'sv-list' },
+                  ...group.map(svc => h(SvRow, { key: svc.id, svc, live }))
                 )
               ),
             );
